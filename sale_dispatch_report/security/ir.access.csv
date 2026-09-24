@@ -1,0 +1,3 @@
+id,name,model_id,group_id/id,operation,domain
+access_sale_dispatch_report_salesman,sale.dispatch.report salesman,sale.dispatch.report,sales_team.group_sale_salesman,r,
+access_sale_dispatch_report_comp_rule,Dispatch Report multi-company,sale.dispatch.report,,r,"[('company_id', 'in', company_ids)]"

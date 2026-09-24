@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_sale_dispatch_report_list" model="ir.ui.view">
+        <field name="name">sale.dispatch.report.list</field>
+        <field name="model">sale.dispatch.report</field>
+        <field name="arch" type="xml">
+            <list string="Dispatch Report" create="false" edit="false" delete="false">
+                <field name="product_id"/>
+                <field name="default_code"/>
+                <field name="hsn_code"/>
+                <field name="product_uom_qty" sum="Qty"/>
+                <field name="qty_delivered" sum="Delivered"/>
+                <field name="total_demand" sum="Total Demand"/>
+                <field name="uom_id" groups="uom.group_uom"/>
+                <field name="fiscal_position_id"/>
+                <field name="scheduled_date"/>
+                <field name="company_id" groups="base.group_multi_company" optional="hide"/>
+                <field name="order_id" optional="hide"/>
+                <field name="partner_id" optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_sale_dispatch_report_search" model="ir.ui.view">
+        <field name="name">sale.dispatch.report.search</field>
+        <field name="model">sale.dispatch.report</field>
+        <field name="arch" type="xml">
+            <search string="Dispatch Report">
+                <field name="product_id"/>
+                <field name="default_code"/>
+                <field name="partner_id"/>
+                <field name="order_id"/>
+                <filter name="filter_undelivered" string="Not Fully Delivered"
+                        domain="[('qty_delivered', '&lt;', 'product_uom_qty')]"/>
+                <filter name="filter_scheduled" string="Scheduled"
+                        date="scheduled_date"/>
+                <group>
+                    <filter name="group_product" string="Product"
+                            context="{'group_by': 'product_id'}"/>
+                    <filter name="group_customer" string="Customer"
+                            context="{'group_by': 'partner_id'}"/>
+                    <filter name="group_company" string="Company"
+                            groups="base.group_multi_company"
+                            context="{'group_by': 'company_id'}"/>
+                    <filter name="group_fiscal_position" string="Fiscal Position"
+                            context="{'group_by': 'fiscal_position_id'}"/>
+                    <filter name="group_scheduled_date" string="Scheduled Date"
+                            context="{'group_by': 'scheduled_date:month'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_sale_dispatch_report" model="ir.actions.act_window">
+        <field name="name">Dispatch Report</field>
+        <field name="res_model">sale.dispatch.report</field>
+        <field name="view_mode">list</field>
+        <field name="search_view_id" ref="view_sale_dispatch_report_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No dispatch lines found
+            </p>
+            <p>
+                This report lists sale order lines with their ordered,
+                demanded and delivered quantities.
+            </p>
+        </field>
+    </record>
+
+    <menuitem id="menu_sale_dispatch_report"
+              name="Dispatch Report"
+              parent="sale.menu_sale_report"
+              action="action_sale_dispatch_report"
+              sequence="50"/>
+
+</odoo>

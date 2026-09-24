@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_partner_form_inherit_medical" model="ir.ui.view">
+        <field name="name">res.partner.form.inherit.medical</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='category_id']" position="after">
+                <field name="is_patient"/>
+            </xpath>
+            <xpath expr="//page[@name='internal_notes']" position="before">
+                <page string="Medical Info" name="medical_info" invisible="not is_patient">
+                    <group>
+                        <group string="Identification">
+                            <field name="patient_ref"/>
+                        </group>
+                        <group string="Medical Details">
+                            <field name="date_of_birth"/>
+                            <field name="age" readonly="1"/>
+                            <field name="blood_group"/>
+                        </group>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

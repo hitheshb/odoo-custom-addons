@@ -1,0 +1,29 @@
+# Python build artifacts
+__pycache__/
+*.py[cod]
+*.egg-info/
+.Python
+venv/
+.venv/
+
+# Odoo runtime
+*.log
+.odoorc
+odoo.conf
+filestore/
+sessions/
+
+# Editor / OS
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Claude Code local settings (machine-specific)
+.claude/settings.local.json
+**/.claude/settings.local.json
+
+# Tracked separately in its own repository:
+# https://github.com/hitheshb/grocery_management
+/grocery_management/

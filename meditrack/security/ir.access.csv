@@ -1,0 +1,5 @@
+id,name,model_id,group_id/id,operation,domain
+access_hospital_appointment_user,hospital.appointment.user,hospital.appointment,base.group_user,crud,
+access_hospital_checkup_user,hospital.checkup.user,hospital.checkup,base.group_user,crud,
+access_hospital_prescription_user,hospital.prescription.user,hospital.prescription,base.group_user,crud,
+access_hospital_dispatch_report_user,hospital.dispatch.report,hospital.dispatch.report,base.group_user,read,

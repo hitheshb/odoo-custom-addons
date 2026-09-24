@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_hospital_checkup_form" model="ir.ui.view">
+        <field name="name">hospital.checkup.form</field>
+        <field name="model">hospital.checkup</field>
+        <field name="arch" type="xml">
+            <form string="Check-up">
+                <sheet>
+                    <group>
+                        <field name="appointment_id"/>
+                        <field name="temperature"/>
+                        <field name="advice"/>
+                    </group>
+                    <notebook>
+                        <page string="Prescriptions">
+                            <field name="prescription_ids">
+                                <list editable="bottom">
+                                    <field name="medicine_name"/>
+                                    <field name="dosage"/>
+                                    <field name="duration"/>
+                                    <field name="notes"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_hospital_checkup_list" model="ir.ui.view">
+        <field name="name">hospital.checkup.list</field>
+        <field name="model">hospital.checkup</field>
+        <field name="arch" type="xml">
+            <list string="Check-ups">
+                <field name="appointment_id"/>
+                <field name="temperature"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_hospital_checkup" model="ir.actions.act_window">
+        <field name="name">Check-up</field>
+        <field name="res_model">hospital.checkup</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="menu_hospital_checkup"
+              name="Check-up"
+              parent="menu_hospital_root"
+              action="action_hospital_checkup"
+              sequence="40"/>
+
+</odoo>

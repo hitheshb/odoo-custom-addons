@@ -1,0 +1,21 @@
+{
+    'name': 'Meditrack',
+    'version': '1.0',
+    'category': 'Services/Hospital',
+    'summary': 'Hospital patient, doctor and appointment management',
+    'author': 'Hithesh',
+    'depends': ['base', 'contacts'],
+    'data': [
+    'security/ir.access.csv',
+    'data/sequence.xml',
+    'views/patient_views.xml',
+    'views/patient_inherit_views.xml',
+    'views/doctor_views.xml',
+    'views/appointment_views.xml',
+    'views/checkup_views.xml',
+    'views/dispatch_report_views.xml',
+    ],
+    'installable': True,
+    'application': True,
+    'license': 'LGPL-3',
+}
