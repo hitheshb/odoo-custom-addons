@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<odoo>
+
+    <record id="seq_grocery_sale" model="ir.sequence">
+        <field name="name">Grocery Sale</field>
+        <field name="code">grocery.sale</field>
+        <field name="prefix">SALE</field>
+        <field name="padding">5</field>
+    </record>
+
+    <record id="seq_grocery_customer" model="ir.sequence">
+        <field name="name">Grocery Customer</field>
+        <field name="code">grocery.customer</field>
+        <field name="prefix">CUST</field>
+        <field name="padding">5</field>
+    </record>
+
+</odoo>

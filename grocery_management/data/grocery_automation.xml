@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- SCHEDULED ACTION: runs daily, posts a chatter message on products that are
+         expired or expiring soon (window configurable in Settings). -->
+    <record id="ir_cron_grocery_check_expiring_products" model="ir.cron">
+        <field name="name">Grocery: Check Expiring Products</field>
+        <field name="model_id" ref="model_grocery_product"/>
+        <field name="state">code</field>
+        <field name="code">model._cron_check_expiring_products()</field>
+        <field name="interval_number">1</field>
+        <field name="interval_type">days</field>
+        <field name="active" eval="True"/>
+    </record>
+
+    <!-- SERVER ACTION: appears in the Sales list view's Action (gear) menu. Bulk-approves
+         the selected draft sales by reusing grocery.sale's own write() override, so stock
+         deduction still goes through its single control point. -->
+    <record id="action_server_grocery_sale_bulk_approve" model="ir.actions.server">
+        <field name="name">Approve Selected Sales</field>
+        <field name="model_id" ref="model_grocery_sale"/>
+        <field name="binding_model_id" ref="model_grocery_sale"/>
+        <field name="binding_view_types">list</field>
+        <field name="state">code</field>
+        <field name="code">records.action_bulk_approve()</field>
+    </record>
+
+</odoo>

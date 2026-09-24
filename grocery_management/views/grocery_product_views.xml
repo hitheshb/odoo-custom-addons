@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<odoo>
+
+    <record id="view_grocery_product_list" model="ir.ui.view">
+        <field name="name">grocery.product.list</field>
+        <field name="model">grocery.product</field>
+
+        <field name="arch" type="xml">
+            <list decoration-danger="is_low_stock">
+                <field name="name"/>
+                <field name="brand"/>
+                <field name="category"/>
+                <field name="selling_price"/>
+                <field name="quantity"/>
+                <field name="quality" widget="priority"/>
+                <field name="is_low_stock" column_invisible="1"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_grocery_product_search" model="ir.ui.view">
+        <field name="name">grocery.product.search</field>
+        <field name="model">grocery.product</field>
+
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="brand"/>
+                <field name="category"/>
+
+                <filter string="Low Stock" name="low_stock" domain="[('is_low_stock', '=', True)]"/>
+                <filter string="Out of Stock" name="out_of_stock" domain="[('quantity', '=', 0)]"/>
+                <filter string="Expired" name="expired" domain="[('expiry_date', '&lt;', context_today().strftime('%Y-%m-%d'))]"/>
+
+                <separator/>    
+                <group>
+                    <filter string="Brand" name="group_brand" context="{'group_by': 'brand'}"/>
+                    <filter string="Category" name="group_category" context="{'group_by': 'category'}"/>
+                    <filter string="Quality" name="group_quality" context="{'group_by': 'quality'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_grocery_product_form" model="ir.ui.view">
+        <field name="name">grocery.product.form</field>
+        <field name="model">grocery.product</field>
+
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="%(action_grocery_restock_wizard)d"
+                            type="action"
+                            string="Restock"
+                            class="btn-primary"
+                            context="{'default_product_id': id}"/>
+                </header>
+
+                <sheet>
+                    <widget name="web_ribbon"
+                            title="Only few left"
+                            bg_color="text-bg-danger"
+                            invisible="not is_low_stock"/>
+
+                    <field name="is_low_stock" invisible="1"/>
+
+                    <group>
+                        <field name="name"/>
+                        <field name="brand"/>
+                        <field name="category"/>
+                        <field name="cost_price"/>
+                        <field name="selling_price"/>
+                        <field name="quantity"/>
+                        <field name="quality" widget="priority"/>
+                        <field name="expiry_date"/>
+                    </group>
+                </sheet>
+
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+</odoo>

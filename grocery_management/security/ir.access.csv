@@ -1,0 +1,5 @@
+id,name,model_id:id,group_id:id,operation
+access_grocery_product_user,grocery.product.user,model_grocery_product,group_grocery_user,crud
+access_grocery_customer_user,grocery.customer.user,model_grocery_customer,group_grocery_user,crud
+access_grocery_sale_line_user,grocery.sale.line,model_grocery_sale_line,group_grocery_user,crud
+access_grocery_restock_wizard_user,grocery.restock.wizard,model_grocery_restock_wizard,group_grocery_user,crud

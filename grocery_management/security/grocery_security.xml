@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Row-level restriction: a plain "User" can CRUD grocery.sale, but only the rows
+         matched by the domain below. In this Odoo version there's no separate ir.rule
+         model any more (see project memory) - a restriction is just an ir.access record
+         that has BOTH group_id and domain set on the same row. -->
+    <record id="access_grocery_sale_user_own" model="ir.access">
+        <field name="name">grocery.sale.user.own</field>
+        <field name="model_id" ref="model_grocery_sale"/>
+        <field name="group_id" ref="group_grocery_user"/>
+        <field name="operation">crud</field>
+        <!-- TODO(human): decide which grocery.sale rows a plain "User" should be
+             restricted to, and set that as this domain. The logged-in user is
+             available in this expression as `user` (a res.users recordset).
+             The placeholder below matches every row, i.e. no restriction yet. -->
+        <field name="domain">[(1, '=', 1)]</field>
+    </record>
+
+    <!-- Manager override: Manager implies User (see grocery_groups.xml), so without this
+         row Managers would inherit the restriction above too - permissions from every
+         group a user belongs to are OR'd together, so this unrestricted row for Manager
+         wins and Managers see every sale regardless of who created it. -->
+    <record id="access_grocery_sale_manager_all" model="ir.access">
+        <field name="name">grocery.sale.manager.all</field>
+        <field name="model_id" ref="model_grocery_sale"/>
+        <field name="group_id" ref="group_grocery_manager"/>
+        <field name="operation">crud</field>
+    </record>
+
+</odoo>

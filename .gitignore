@@ -23,7 +23,3 @@ sessions/
 # Claude Code local settings (machine-specific)
 .claude/settings.local.json
 **/.claude/settings.local.json
-
-# Tracked separately in its own repository:
-# https://github.com/hitheshb/grocery_management
-/grocery_management/

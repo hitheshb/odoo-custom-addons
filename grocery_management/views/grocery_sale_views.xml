@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<odoo>
+
+    <record id="view_grocery_sale_list" model="ir.ui.view">
+        <field name="name">grocery.sale.list</field>
+        <field name="model">grocery.sale</field>
+
+        <field name="arch" type="xml">
+            <list decoration-success="state == 'approved'" decoration-muted="state == 'draft'">
+                <field name="name"/>
+                <field name="customer_id"/>
+                <field name="sale_date"/>
+                <field name="state"/>
+                <field name="amount_total" sum="Total"/>
+            </list>
+        </field>
+    </record>
+
+
+    <record id="view_grocery_sale_calendar" model="ir.ui.view">
+        <field name="name">grocery.sale.calendar</field>
+        <field name="model">grocery.sale</field>
+
+        <field name="arch" type="xml">
+            <calendar string="Sales" date_start="sale_date" color="customer_id" event_limit="5">
+                <field name="customer_id"/>
+                <field name="amount_total"/>
+            </calendar>
+        </field>
+    </record>
+
+
+    <record id="view_grocery_sale_search" model="ir.ui.view">
+        <field name="name">grocery.sale.search</field>
+        <field name="model">grocery.sale</field>
+
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="customer_id"/>
+                <field name="sale_date"/>
+
+                <filter string="Draft" name="draft" domain="[('state', '=', 'draft')]"/>
+                <filter string="Approved" name="approved" domain="[('state', '=', 'approved')]"/>
+
+                <separator/>
+                <group>
+                    <filter string="Customer" name="group_customer" context="{'group_by': 'customer_id'}"/>
+                    <filter string="Status" name="group_state" context="{'group_by': 'state'}"/>
+                    <filter string="Sale Date" name="group_sale_date" context="{'group_by': 'sale_date'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+
+    <record id="view_grocery_sale_form" model="ir.ui.view">
+        <field name="name">grocery.sale.form</field>
+        <field name="model">grocery.sale</field>
+
+        <field name="arch" type="xml">
+            <form>
+
+                <header>
+                    <field name="state"
+                           widget="statusbar"
+                           options="{'clickable': true}"/>
+                </header>
+
+                <sheet>
+
+                    <div class="alert alert-warning" role="alert" invisible="not low_stock_warning">
+                        <field name="low_stock_warning"/>
+                    </div>
+
+                    <group>
+                        <field name="name"/>
+                        <field name="customer_id"/>
+                        <field name="sale_date"/>
+                        <field name="amount_total"/>
+                        <field name="discount_selection"/>
+                        <field name="discount_rate" force_save="1"/>
+                    </group>
+
+                    <notebook>
+                        <page string="Sale Lines">
+                            <field name="line_ids">
+                                <list editable="bottom">
+                                    <field name="product_id" domain="[('quantity', '>', 0)]"/>
+                                    <field name="quantity"/>
+                                    <field name="price"/>
+                                    <field name="total" sum="Total"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+
+                </sheet>
+
+                <chatter/>
+
+            </form>
+        </field>
+    </record>
+
+</odoo>

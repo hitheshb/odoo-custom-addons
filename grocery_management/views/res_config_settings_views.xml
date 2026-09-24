@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<odoo>
+
+    <record id="res_config_settings_view_form_grocery" model="ir.ui.view">
+        <field name="name">res.config.settings.view.form.inherit.grocery</field>
+        <field name="model">res.config.settings</field>
+        <field name="priority" eval="30"/>
+        <field name="inherit_id" ref="base.res_config_settings_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//form" position="inside">
+                <app data-string="Grocery Management" string="Grocery Management" name="grocery_management"
+                     groups="grocery_management.group_grocery_manager">
+                    <block title="Stock">
+                        <setting help="Products with quantity below this value are flagged as low stock">
+                            <field name="grocery_low_stock_threshold"/>
+                        </setting>
+                        <setting help="The daily expiry check posts a warning on products expiring within this many days">
+                            <field name="grocery_expiry_warning_days"/>
+                        </setting>
+                    </block>
+                </app>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>
