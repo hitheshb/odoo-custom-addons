@@ -1,6 +1,6 @@
 # Odoo Custom Addons
 
-Custom Odoo modules built while learning the framework. Targets **Odoo saas~19.4**.
+Custom Odoo modules built while learning the framework. Targets **Odoo 20.0** (the `main` branch targets saas~19.4).
 
 ## Modules
 

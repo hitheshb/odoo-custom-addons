@@ -67,6 +67,18 @@ class GroceryProduct(models.Model):                         # a permanent model
             "grocery_management.expiry_warning_days", 3
         )
 
+# BULK RESTOCK: adds a flat 50 units to every product in the recordset.
+# Wired up as a server action (see views/grocery_product_views.xml) so it can
+# be run from the product list's Actions menu, on all or just selected products.
+    def action_restock_flat_50(self):
+        restock_amount = 50
+        for product in self:
+            product.quantity += restock_amount
+            product.message_post(
+                body="Restocked %s units (new quantity: %s)."
+                % (restock_amount, product.quantity)
+            )
+
 # SCHEDULED ACTION TARGET (see data/grocery_automation.xml, runs daily).
 # Posts a chatter message on any product that is already expired or expiring soon.
     def _cron_check_expiring_products(self):

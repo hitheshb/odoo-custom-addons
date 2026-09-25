@@ -2,6 +2,15 @@
 
 <odoo>
 
+    <record id="action_grocery_restock_all_flat_50" model="ir.actions.server">
+        <field name="name">Restock +50 Units</field>
+        <field name="model_id" ref="model_grocery_product"/>
+        <field name="binding_model_id" ref="model_grocery_product"/>
+        <field name="binding_view_types">list</field>
+        <field name="state">code</field>
+        <field name="code">records.action_restock_flat_50()</field>
+    </record>
+
     <record id="view_grocery_product_list" model="ir.ui.view">
         <field name="name">grocery.product.list</field>
         <field name="model">grocery.product</field>
