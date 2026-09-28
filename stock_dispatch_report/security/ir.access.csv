@@ -1,3 +1,4 @@
 id,name,model_id,group_id/id,operation,domain
 access_stock_dispatch_report_user,stock.dispatch.report stock user,stock.dispatch.report,stock.group_stock_user,r,
 access_stock_dispatch_report_comp_rule,Stock Dispatch Report multi-company,stock.dispatch.report,,r,"[('company_id', 'in', company_ids)]"
+access_stock_dispatch_report_wizard_user,stock.dispatch.report.wizard stock user,stock.dispatch.report.wizard,stock.group_stock_user,crud,

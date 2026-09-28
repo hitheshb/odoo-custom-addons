@@ -9,6 +9,7 @@
     'depends': ['stock', 'sale_stock'],
     'data': [
         'security/ir.access.csv',
+        'wizards/stock_dispatch_report_wizard_views.xml',
         'views/stock_dispatch_report_views.xml',
     ],
     'installable': True,
