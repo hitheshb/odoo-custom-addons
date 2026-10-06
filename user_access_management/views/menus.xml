@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem id="menu_uam_root" name="User Access" sequence="91" groups="base.group_system"/>
+    <menuitem id="menu_uam_users" name="Users" parent="menu_uam_root" action="user_action" sequence="10"/>
+    <menuitem id="menu_uam_groups" name="Groups" parent="menu_uam_root" action="group_action" sequence="20"/>
+    <menuitem id="menu_uam_access" name="Access Rights" parent="menu_uam_root" action="access_action" sequence="30"/>
+    <menuitem id="menu_uam_log" name="Change Log" parent="menu_uam_root" action="access_change_log_action" sequence="40"/>
+</odoo>

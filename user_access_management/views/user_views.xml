@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="user_list_view" model="ir.ui.view">
+        <field name="name">user.access.user.list</field>
+        <field name="model">res.users</field>
+        <field name="arch" type="xml">
+            <list create="false" delete="false">
+                <field name="name"/>
+                <field name="login"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="user_form_view" model="ir.ui.view">
+        <field name="name">user.access.user.form</field>
+        <field name="model">res.users</field>
+        <field name="arch" type="xml">
+            <form create="false" delete="false">
+                <sheet>
+                    <group>
+                        <field name="name" readonly="1"/>
+                        <field name="login" readonly="1"/>
+                    </group>
+                    <notebook>
+                        <page string="Groups" name="groups">
+                            <field name="group_ids" context="{'form_view_ref': 'user_access_management.group_form_view', 'list_view_ref': 'user_access_management.group_list_view'}"/>
+                        </page>
+                        <page string="Effective Groups" name="effective_groups">
+                            <field name="all_group_ids" readonly="1" context="{'form_view_ref': 'user_access_management.group_form_view', 'list_view_ref': 'user_access_management.group_list_view'}"/>
+                        </page>
+                        <page string="Effective Access Rights" name="effective_access">
+                            <field name="uam_access_ids" readonly="1" context="{'form_view_ref': 'user_access_management.access_form_view', 'list_view_ref': 'user_access_management.access_list_view'}"/>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="user_action" model="ir.actions.act_window">
+        <field name="name">Users</field>
+        <field name="res_model">res.users</field>
+        <field name="view_mode">list,form</field>
+    </record>
+    <record id="user_action_list" model="ir.actions.act_window.view">
+        <field name="sequence" eval="1"/>
+        <field name="view_mode">list</field>
+        <field name="view_id" ref="user_list_view"/>
+        <field name="act_window_id" ref="user_action"/>
+    </record>
+    <record id="user_action_form" model="ir.actions.act_window.view">
+        <field name="sequence" eval="2"/>
+        <field name="view_mode">form</field>
+        <field name="view_id" ref="user_form_view"/>
+        <field name="act_window_id" ref="user_action"/>
+    </record>
+</odoo>

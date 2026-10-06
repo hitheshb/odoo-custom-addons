@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="test_access_import_view_form" model="ir.ui.view">
+        <field name="name">test.access.import.form</field>
+        <field name="model">test.access.import</field>
+        <field name="arch" type="xml">
+            <form>
+                <group>
+                    <field name="user_id" readonly="1"/>
+                    <field name="file" filename="filename"/>
+                    <field name="filename" invisible="1"/>
+                </group>
+                <group invisible="not error_report">
+                    <field name="error_report" nolabel="1" colspan="2"/>
+                </group>
+                <footer>
+                    <button string="Import" type="object" name="action_import" class="btn-primary"/>
+                    <button string="Cancel" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

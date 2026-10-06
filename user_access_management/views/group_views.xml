@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="group_list_view" model="ir.ui.view">
+        <field name="name">user.access.group.list</field>
+        <field name="model">res.groups</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="full_name"/>
+                <field name="privilege_id"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="group_form_view" model="ir.ui.view">
+        <field name="name">user.access.group.form</field>
+        <field name="model">res.groups</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="privilege_id"/>
+                    </group>
+                    <notebook>
+                        <page string="Users" name="users">
+                            <field name="user_ids" context="{'form_view_ref': 'user_access_management.user_form_view', 'list_view_ref': 'user_access_management.user_list_view'}"/>
+                        </page>
+                        <page string="Implied Groups" name="implied">
+                            <field name="implied_ids" context="{'form_view_ref': 'user_access_management.group_form_view', 'list_view_ref': 'user_access_management.group_list_view'}"/>
+                        </page>
+                        <page string="Everything It Implies" name="all_implied">
+                            <field name="all_implied_ids" readonly="1" context="{'form_view_ref': 'user_access_management.group_form_view', 'list_view_ref': 'user_access_management.group_list_view'}"/>
+                        </page>
+                        <page string="Implied By" name="implied_by">
+                            <field name="all_implied_by_ids" readonly="1" context="{'form_view_ref': 'user_access_management.group_form_view', 'list_view_ref': 'user_access_management.group_list_view'}"/>
+                        </page>
+                        <page string="Access Rights" name="access">
+                            <field name="access_ids" context="{'form_view_ref': 'user_access_management.access_form_view', 'list_view_ref': 'user_access_management.access_list_view'}"/>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="group_action" model="ir.actions.act_window">
+        <field name="name">Groups</field>
+        <field name="res_model">res.groups</field>
+        <field name="view_mode">list,form</field>
+    </record>
+    <record id="group_action_list" model="ir.actions.act_window.view">
+        <field name="sequence" eval="1"/>
+        <field name="view_mode">list</field>
+        <field name="view_id" ref="group_list_view"/>
+        <field name="act_window_id" ref="group_action"/>
+    </record>
+    <record id="group_action_form" model="ir.actions.act_window.view">
+        <field name="sequence" eval="2"/>
+        <field name="view_mode">form</field>
+        <field name="view_id" ref="group_form_view"/>
+        <field name="act_window_id" ref="group_action"/>
+    </record>
+</odoo>

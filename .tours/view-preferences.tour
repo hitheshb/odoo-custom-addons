@@ -1,0 +1,107 @@
+{
+  "$schema": "https://aka.ms/codetour-schema",
+  "title": "View Preferences - showing a hidden field",
+  "steps": [
+    {
+      "title": "The goal",
+      "description": "In older Odoo versions the user form had a Home Action field on the Preferences tab. Odoo 20 removed it from the screen, but the field still lives on the user model. The module puts it back.\n\nIt has no Python code at all. It is one small package, one manifest and one XML file that extends an existing screen.\n\nWe will follow the load order. First the package, then the manifest, then the view, piece by piece."
+    },
+    {
+      "title": "An empty init file",
+      "description": "This file is empty on purpose. Its presence turns the folder into a Python package, and Odoo only accepts a folder as a module if it is a package.\n\nWe have no models, so there is nothing to import. If you add a models folder later, this is where you would import it.",
+      "file": "view_preferences/__init__.py",
+      "line": 1
+    },
+    {
+      "title": "The manifest identity",
+      "description": "The manifest is a plain Python dictionary. Odoo reads it first, like an ID card for the module.\n\nName is what shows in the Apps list. Version follows the pattern of Odoo version first, then the module version. Summary is the one line description under the name.",
+      "file": "view_preferences/__manifest__.py",
+      "selection": {
+        "start": {
+          "line": 2,
+          "character": 1
+        },
+        "end": {
+          "line": 4,
+          "character": 73
+        }
+      }
+    },
+    {
+      "title": "Depends and data",
+      "description": "Depends lists modules that must load before this one. We need base, because the user form we extend is defined there. Get this wrong and the install fails with a missing reference error.\n\nData is the ordered list of files loaded at install or upgrade. If a file is not listed here, Odoo never reads it. That is a very common reason for a change not showing up.",
+      "file": "view_preferences/__manifest__.py",
+      "selection": {
+        "start": {
+          "line": 5,
+          "character": 1
+        },
+        "end": {
+          "line": 6,
+          "character": 43
+        }
+      }
+    },
+    {
+      "title": "A view is a record",
+      "description": "The record tag creates one row in a database table. Here the table is the view table, where Odoo stores every screen.\n\nThe id becomes the external name of this row. Other modules can refer to it with the module name in front. The name field is only a human label. The model field says which model the screen belongs to, here the user model.",
+      "file": "view_preferences/views/res_users_views.xml",
+      "selection": {
+        "start": {
+          "line": 3,
+          "character": 1
+        },
+        "end": {
+          "line": 5,
+          "character": 46
+        }
+      }
+    },
+    {
+      "title": "Inheriting a view",
+      "description": "The inherit field is what turns a brand new screen into an extension of an existing one.\n\nThe reference says the view called users form in the base module. The module name is needed in front because it lives in another module.\n\nOdoo never edits the original file. At load time it applies our change on top, in memory. That is why upgrading Odoo does not destroy your customisation.",
+      "file": "view_preferences/views/res_users_views.xml",
+      "line": 6
+    },
+    {
+      "title": "Finding the place",
+      "description": "The arch field holds the actual XML of the change. Its type is xml, so Odoo parses it as a tree.\n\nThe group tag says find the group named other preferences and put my content inside it, at the end. The position attribute has five values. Inside adds children. Before and after add siblings. Replace swaps the element. Attributes changes its properties.\n\nThis is a shortcut for a longer xpath form. Use xpath only when no single name identifies the spot.",
+      "file": "view_preferences/views/res_users_views.xml",
+      "selection": {
+        "start": {
+          "line": 7,
+          "character": 1
+        },
+        "end": {
+          "line": 8,
+          "character": 63
+        }
+      }
+    },
+    {
+      "title": "The field itself",
+      "description": "This one line is the whole feature. The field tag draws the action field of the user model as an input on the form.\n\nThe field is a many to one link to a window action, so the user sees a dropdown of actions. When set, that action opens right after login, as the personal home screen.\n\nNo Python is needed, because the field already exists on the model. We only decided to show it.",
+      "file": "view_preferences/views/res_users_views.xml",
+      "line": 9
+    },
+    {
+      "title": "Closing the record",
+      "description": "The closing tags end the group change, the arch, and the record. When you install or upgrade the module, Odoo reads this record and stores it as one new row in the view table.\n\nThe next time anyone opens a user form, Odoo merges this row into the base form and the new field appears. Remember to upgrade the module after every XML edit, or the old version stays in the database.",
+      "file": "view_preferences/views/res_users_views.xml",
+      "selection": {
+        "start": {
+          "line": 10,
+          "character": 1
+        },
+        "end": {
+          "line": 12,
+          "character": 14
+        }
+      }
+    },
+    {
+      "title": "Recap and next steps",
+      "description": "We restored a hidden field with the smallest possible module. The package makes it loadable. The manifest names it, sets base as a dependency and lists the view file. The view record inherits the users form and injects one field into an empty hook group.\n\nTry this. Install the module, open a user, and check the Preferences tab. Then pick an action and log in again. As practice, add a second field next to it, or try the position value after instead of inside."
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="cron_temp_access_sync" model="ir.cron">
+        <field name="name">Administration: apply and expire temporary access</field>
+        <field name="model_id" ref="model_admin_temp_access"/>
+        <field name="state">code</field>
+        <field name="code">model._cron_sync()</field>
+        <field name="user_id" ref="base.user_root"/>
+        <field name="interval_number">1</field>
+        <field name="interval_type">minutes</field>
+    </record>
+    <record id="cron_inactive_alert" model="ir.cron">
+        <field name="name">Administration: inactive user alerts</field>
+        <field name="model_id" ref="base.model_res_users"/>
+        <field name="state">code</field>
+        <field name="code">model._cron_inactive_alert()</field>
+        <field name="user_id" ref="base.user_root"/>
+        <field name="interval_number">1</field>
+        <field name="interval_type">days</field>
+    </record>
+</odoo>

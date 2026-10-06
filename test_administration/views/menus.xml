@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem id="menu_test_administration_root" name="Administration+"
+              sequence="91" groups="base.group_system"/>
+    <menuitem id="menu_admin_dashboard" name="Dashboard" parent="menu_test_administration_root"
+              action="admin_dashboard_server_action" sequence="10" groups="base.group_system"/>
+    <menuitem id="menu_admin_employee_status" name="Employee Status" parent="menu_test_administration_root"
+              action="hr_employee_admin_action" sequence="20" groups="base.group_system"/>
+    <menuitem id="menu_admin_activity" name="Activity Analytics" parent="menu_test_administration_root"
+              action="admin_activity_action" sequence="30" groups="base.group_system"/>
+    <menuitem id="menu_admin_weekly" name="Weekly Summary" parent="menu_test_administration_root"
+              action="admin_weekly_summary_action" sequence="40" groups="base.group_system"/>
+    <menuitem id="menu_admin_alerts" name="Alerts" parent="menu_test_administration_root"
+              action="admin_alert_action" sequence="50" groups="base.group_system"/>
+    <menuitem id="menu_admin_temp_access" name="Temporary Access" parent="menu_test_administration_root"
+              action="admin_temp_access_action" sequence="60" groups="base.group_system"/>
+    <menuitem id="menu_admin_simulation" name="Access Simulation" parent="menu_test_administration_root"
+              action="admin_access_simulation_action" sequence="70" groups="base.group_system"/>
+</odoo>

@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="admin_activity_view_list" model="ir.ui.view">
+        <field name="name">admin.activity.list</field>
+        <field name="model">admin.activity</field>
+        <field name="arch" type="xml">
+            <list create="0" edit="0">
+                <field name="create_date"/>
+                <field name="user_id"/>
+                <field name="action"/>
+                <field name="model_name"/>
+                <field name="res_id"/>
+                <field name="count"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="admin_activity_view_search" model="ir.ui.view">
+        <field name="name">admin.activity.search</field>
+        <field name="model">admin.activity</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="user_id"/>
+                <field name="model_name"/>
+                <filter name="this_week" string="This Week"
+                        domain="[('create_date', '&gt;=', (context_today() - relativedelta(weekday=0, days=6)).strftime('%Y-%m-%d'))]"/>
+                <group>
+                    <filter name="by_user" string="User" context="{'group_by': 'user_id'}"/>
+                    <filter name="by_day" string="Day" context="{'group_by': 'create_date:day'}"/>
+                    <filter name="by_model" string="Model" context="{'group_by': 'model_name'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="admin_activity_view_pivot" model="ir.ui.view">
+        <field name="name">admin.activity.pivot</field>
+        <field name="model">admin.activity</field>
+        <field name="arch" type="xml">
+            <pivot>
+                <field name="user_id" type="row"/>
+                <field name="create_date" interval="day" type="col"/>
+                <field name="count" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="admin_activity_view_graph" model="ir.ui.view">
+        <field name="name">admin.activity.graph</field>
+        <field name="model">admin.activity</field>
+        <field name="arch" type="xml">
+            <graph type="bar">
+                <field name="create_date" interval="day"/>
+                <field name="user_id"/>
+                <field name="count" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="admin_activity_action" model="ir.actions.act_window">
+        <field name="name">Activity Analytics</field>
+        <field name="res_model">admin.activity</field>
+        <field name="view_mode">pivot,graph,list</field>
+        <field name="context">{'search_default_this_week': 1}</field>
+    </record>
+</odoo>
