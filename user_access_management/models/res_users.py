@@ -95,6 +95,28 @@ class ResUsers(models.Model):
             user.uam_group_count = len(user.all_group_ids)
             user.uam_access_count = len(user.uam_access_ids)
 
+    def _uam_notify(self, message, kind='success'):
+        return {'type': 'ir.actions.client', 'tag': 'display_notification',
+                'params': {'message': message, 'type': kind, 'sticky': False}}
+
+    def _uam_stale_targets(self):
+        admins = self.env.ref('base.group_system').all_user_ids
+        return self.filtered(lambda u: u.uam_login_stale and u != self.env.user and u not in admins)
+
+    def action_uam_archive_stale(self):
+        targets = self._uam_stale_targets()
+        targets.sudo().write({'active': False})
+        return self._uam_notify(self.env._('Archived %(n)s, skipped %(s)s (recent login, administrator or yourself).',
+                                           n=len(targets), s=len(self) - len(targets)))
+
+    def action_uam_remind_stale(self):
+        template = self.env.ref('user_access_management.mail_template_stale_reminder')
+        targets = self._uam_stale_targets().filtered('email')
+        for user in targets:
+            template.sudo().send_mail(user.id, force_send=False)
+        return self._uam_notify(self.env._('Sent %(n)s reminders, skipped %(s)s (recent login, no email, administrator or yourself).',
+                                           n=len(targets), s=len(self) - len(targets)))
+
     def action_uam_open_groups(self):
         self.ensure_one()
         return {

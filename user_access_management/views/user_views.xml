@@ -5,6 +5,12 @@
         <field name="model">res.users</field>
         <field name="arch" type="xml">
             <list create="false" delete="false" decoration-muted="not active">
+                <header>
+                    <button name="action_uam_archive_stale" type="object" string="Archive stale users"
+                            confirm="Archive the selected users who haven't logged in recently? Administrators and yourself are skipped."/>
+                    <button name="action_uam_remind_stale" type="object" string="Send login reminder"
+                            confirm="Email a login reminder to the selected users who haven't logged in recently?"/>
+                </header>
                 <field name="avatar_128" widget="image" options="{'size': [24, 24], 'img_class': 'o_avatar rounded-circle'}" string=" " width="30"/>
                 <field name="name"/>
                 <field name="im_status" string=" " widget="uam_status_dot"/>
@@ -25,6 +31,12 @@
         <field name="model">res.users</field>
         <field name="arch" type="xml">
             <kanban create="false" delete="false" class="o_kanban_mobile">
+                <header>
+                    <button name="action_uam_archive_stale" type="object" string="Archive stale users"
+                            confirm="Archive the selected users who haven't logged in recently? Administrators and yourself are skipped."/>
+                    <button name="action_uam_remind_stale" type="object" string="Send login reminder"
+                            confirm="Email a login reminder to the selected users who haven't logged in recently?"/>
+                </header>
                 <field name="active"/>
                 <field name="uam_login_stale"/>
                 <templates>

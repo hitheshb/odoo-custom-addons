@@ -20,6 +20,7 @@
         'views/dashboard_views.xml',
         'views/menus.xml',
         'data/ir_cron.xml',
+        'data/mail_template_data.xml',
         'data/uam_data.xml',
     ],
     'assets': {
