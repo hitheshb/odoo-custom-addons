@@ -36,5 +36,9 @@
         <field name="res_model">user.work.update</field>
         <field name="view_mode">list</field>
         <field name="search_view_id" ref="work_update_search_view"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No work updates yet</p>
+            <p>Users are asked every few hours what they are working on; their answers appear here.</p>
+        </field>
     </record>
 </odoo>

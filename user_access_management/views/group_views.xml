@@ -86,6 +86,10 @@
         <field name="res_model">res.groups</field>
         <field name="view_mode">list,form</field>
         <field name="search_view_id" ref="group_search_view"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No groups match</p>
+            <p>Groups bundle access rights; add users to a group to give them its rights.</p>
+        </field>
     </record>
     <record id="group_action_list" model="ir.actions.act_window.view">
         <field name="sequence" eval="1"/>

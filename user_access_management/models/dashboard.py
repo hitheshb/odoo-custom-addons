@@ -34,11 +34,9 @@ class UamDashboard(models.AbstractModel):
     def get_data(self, date=False):
         self._check_admin()
         day = fields.Date.to_date(date) if date else fields.Date.context_today(self)
-        labels = {'online': ('Online', 'fa-circle text-success'), 'away': ('Away', 'fa-circle text-warning'),
-                  'stale': ('Stale logins', 'fa-exclamation-triangle text-danger'),
-                  'locks': ('Active locks', 'fa-lock'), 'temp_expiring': ('Temp access expiring <24h', 'fa-clock-o'),
-                  'prints_today': ('PDFs today', 'fa-print')}
-        tiles = [{'key': k, 'label': labels[k][0], 'icon': labels[k][1],
+        labels = {'online': 'Online', 'away': 'Away', 'stale': 'Stale logins', 'locks': 'Active locks',
+                  'temp_expiring': 'Temp access expiring <24h', 'prints_today': 'PDFs today'}
+        tiles = [{'key': k, 'label': labels[k],
                   'count': self.env[m].sudo().search_count(d)} for k, (m, d) in self._tile_domains().items()]
         order = {'online': 0, 'away': 1}
         users = sorted(self._users(), key=lambda u: (order.get(u.im_status, 2), u.name))

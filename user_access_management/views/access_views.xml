@@ -26,7 +26,7 @@
                     <widget name="web_ribbon" title="Restriction" bg_color="text-bg-danger" invisible="is_standard or kind != 'restriction'"/>
                     <div class="oe_button_box" name="button_box">
                         <button class="oe_stat_button" type="object" name="action_open_users"
-                                icon="fa-users" invisible="not group_id">
+                                string="Users" invisible="not group_id">
                             <field name="uam_user_count" widget="statinfo" string="All Users"/>
                         </button>
                     </div>
@@ -61,6 +61,10 @@
         <field name="name">Access Rights</field>
         <field name="res_model">ir.access</field>
         <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No access rights match</p>
+            <p>Each access right says which operations a group may do on a model.</p>
+        </field>
     </record>
     <record id="access_action_list" model="ir.actions.act_window.view">
         <field name="sequence" eval="1"/>

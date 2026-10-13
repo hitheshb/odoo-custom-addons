@@ -11,7 +11,7 @@
                 <field name="record_name"/>
                 <field name="label" widget="badge" decoration-success="copy_no == 0" decoration-warning="copy_no > 0"/>
                 <field name="copy_no" column_invisible="1"/>
-                <button name="action_download" type="object" icon="fa-download" title="Download this copy"/>
+                <button name="action_download" type="object" icon="download" title="Download this copy"/>
             </list>
         </field>
     </record>
@@ -38,5 +38,9 @@
         <field name="name">Print Log</field>
         <field name="res_model">uam.print.log</field>
         <field name="view_mode">list</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No PDFs downloaded yet</p>
+            <p>Every PDF downloaded from any app is listed here, marked Original or Copy, and can be downloaded again.</p>
+        </field>
     </record>
 </odoo>
