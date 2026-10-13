@@ -1,6 +1,7 @@
 from datetime import timedelta
 
 from odoo import fields
+from odoo.exceptions import AccessError
 from odoo.tests import TransactionCase, new_test_user, tagged
 
 
@@ -73,3 +74,12 @@ class TestStaleLogin(TransactionCase):
         self.assertEqual(count('uam_stale_b@example.com') - before, 1)
         self.assertEqual(count('uam_fresh_b@example.com'), 0)
         self.assertIn('Sent 1', res['params']['message'])
+
+    def test_non_admin_cannot_archive_or_remind(self):
+        stale = self._stale_user('uam_stale_c')
+        plain = new_test_user(self.env, login='uam_plain_c', groups='base.group_user')
+        with self.assertRaises(AccessError):
+            stale.with_user(plain).action_uam_archive_stale()
+        with self.assertRaises(AccessError):
+            stale.with_user(plain).action_uam_remind_stale()
+        self.assertTrue(stale.active)

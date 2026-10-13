@@ -3,6 +3,7 @@ from datetime import timedelta
 from markupsafe import Markup
 
 from odoo import api, fields, models
+from odoo.exceptions import AccessError
 from odoo.tools import SQL, format_datetime
 
 
@@ -99,17 +100,23 @@ class ResUsers(models.Model):
         return {'type': 'ir.actions.client', 'tag': 'display_notification',
                 'params': {'message': message, 'type': kind, 'sticky': False}}
 
+    def _uam_check_admin(self):
+        if not (self.env.is_superuser() or self.env.user.has_group('base.group_system')):
+            raise AccessError(self.env._('Only administrators can do this.'))
+
     def _uam_stale_targets(self):
         admins = self.env.ref('base.group_system').all_user_ids
         return self.filtered(lambda u: u.uam_login_stale and u != self.env.user and u not in admins)
 
     def action_uam_archive_stale(self):
+        self._uam_check_admin()
         targets = self._uam_stale_targets()
         targets.sudo().write({'active': False})
         return self._uam_notify(self.env._('Archived %(n)s, skipped %(s)s (recent login, administrator or yourself).',
                                            n=len(targets), s=len(self) - len(targets)))
 
     def action_uam_remind_stale(self):
+        self._uam_check_admin()
         template = self.env.ref('user_access_management.mail_template_stale_reminder')
         targets = self._uam_stale_targets().filtered('email')
         for user in targets:
