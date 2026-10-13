@@ -1,6 +1,7 @@
 from datetime import timedelta
 
 from odoo import fields
+from odoo.exceptions import AccessError
 from odoo.tests import TransactionCase, new_test_user, tagged
 
 
@@ -34,3 +35,21 @@ class TestUserPage(TransactionCase):
         self.assertNotIn('<b>x</b>', html)
         self.assertIn('Temporary access', html)
         self.assertIn('Locked', html)
+
+    def test_timeline_admin_only(self):
+        plain = new_test_user(self.env, login='uam_plain', groups='base.group_user')
+        with self.assertRaises(AccessError):
+            self.user.with_user(plain).read(['uam_timeline_html'])
+        with self.assertRaises(AccessError):
+            self.user.with_user(plain).read(['uam_change_count'])
+
+    def test_changes_follow_user_id(self):
+        self.user.write({'group_ids': [(4, self.env.ref('base.group_no_one').id)]})
+        old_name = self.user.name
+        self.user.name = 'Renamed Page User'
+        self.user.invalidate_recordset()
+        self.assertGreaterEqual(self.user.uam_change_count, 1)
+        other = new_test_user(self.env, login='uam_page_other', groups='base.group_user')
+        other.name = old_name
+        other.invalidate_recordset()
+        self.assertNotIn(self.user.id, other.env['access.change.log'].search(other._uam_change_domain()).mapped('target_user_id').ids)

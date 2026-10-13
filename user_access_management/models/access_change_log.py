@@ -17,12 +17,13 @@ class AccessChangeLog(models.Model):
         required=True, readonly=True,
     )
     target_name = fields.Char(readonly=True)
+    target_user_id = fields.Many2one('res.users', index=True, readonly=True, ondelete='set null')
     field_label = fields.Char(readonly=True)
     old_value = fields.Text(readonly=True)
     new_value = fields.Text(readonly=True)
 
     @api.model
-    def _log(self, action, kind, name, label='', old='', new=''):
+    def _log(self, action, kind, name, label='', old='', new='', user_id=False):
         if self.env.context.get('install_mode'):
             return
         self.sudo().create({
@@ -30,6 +31,7 @@ class AccessChangeLog(models.Model):
             'action': action,
             'target_kind': kind,
             'target_name': name,
+            'target_user_id': user_id,
             'field_label': label,
             'old_value': old,
             'new_value': new,

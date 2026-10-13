@@ -11,23 +11,23 @@ class ResUsers(models.Model):
 
     uam_access_ids = fields.Many2many(
         'ir.access', string='Effective Access Rights',
-        compute='_compute_uam_access_ids', compute_sudo=True,
+        compute='_compute_uam_access_ids', compute_sudo=True, groups='base.group_system',
     )
 
     uam_login_stale = fields.Boolean(compute='_compute_uam_login_stale', search='_search_uam_login_stale')
     uam_group_count = fields.Integer(string='Group Count', compute='_compute_uam_counts', compute_sudo=True)
     uam_access_count = fields.Integer(string='Access Right Count', compute='_compute_uam_counts', compute_sudo=True)
 
-    uam_last_work = fields.Char(compute='_compute_uam_last_work', compute_sudo=True)
-    uam_current_page = fields.Char('Current Page', readonly=True)
-    uam_last_seen = fields.Datetime('Last Seen', readonly=True)
+    uam_last_work = fields.Char(compute='_compute_uam_last_work', compute_sudo=True, groups='base.group_system')
+    uam_current_page = fields.Char('Current Page', readonly=True, groups='base.group_system')
+    uam_last_seen = fields.Datetime('Last Seen', readonly=True, groups='base.group_system')
 
-    uam_lock_count = fields.Integer(compute='_compute_uam_stats', compute_sudo=True)
-    uam_temp_count = fields.Integer(compute='_compute_uam_stats', compute_sudo=True)
-    uam_print_count = fields.Integer(compute='_compute_uam_stats', compute_sudo=True)
-    uam_usage_count = fields.Integer(compute='_compute_uam_stats', compute_sudo=True)
-    uam_change_count = fields.Integer(compute='_compute_uam_stats', compute_sudo=True)
-    uam_timeline_html = fields.Html(compute='_compute_uam_timeline_html', sanitize=False, compute_sudo=True)
+    uam_lock_count = fields.Integer(compute='_compute_uam_stats', compute_sudo=True, groups='base.group_system')
+    uam_temp_count = fields.Integer(compute='_compute_uam_stats', compute_sudo=True, groups='base.group_system')
+    uam_print_count = fields.Integer(compute='_compute_uam_stats', compute_sudo=True, groups='base.group_system')
+    uam_usage_count = fields.Integer(compute='_compute_uam_stats', compute_sudo=True, groups='base.group_system')
+    uam_change_count = fields.Integer(compute='_compute_uam_stats', compute_sudo=True, groups='base.group_system')
+    uam_timeline_html = fields.Html(compute='_compute_uam_timeline_html', sanitize=False, compute_sudo=True, groups='base.group_system')
 
     @api.model
     def uam_track(self, model, action, page):
@@ -119,6 +119,10 @@ class ResUsers(models.Model):
             'domain': [('id', 'in', self.uam_access_ids.ids)],
         }
 
+    def _uam_change_domain(self):
+        return ['|', ('target_user_id', '=', self.id),
+                '&', ('target_user_id', '=', False), '&', ('target_kind', '=', 'user'), ('target_name', '=', self.name)]
+
     def _uam_lock_domain(self):
         return ['|', ('user_id', '=', self.id), ('group_id', 'in', self.all_group_ids.ids)]
 
@@ -128,8 +132,7 @@ class ResUsers(models.Model):
             user.uam_temp_count = self.env['user.temp.access'].search_count([('user_id', '=', user.id)])
             user.uam_print_count = self.env['uam.print.log'].search_count([('user_id', '=', user.id)])
             user.uam_usage_count = self.env['uam.model.usage'].search_count([('user_id', '=', user.id)])
-            user.uam_change_count = self.env['access.change.log'].search_count(
-                [('target_kind', '=', 'user'), ('target_name', '=', user.name)])
+            user.uam_change_count = self.env['access.change.log'].search_count(user._uam_change_domain())
 
     def _uam_open(self, name, model, domain):
         self.ensure_one()
@@ -149,8 +152,7 @@ class ResUsers(models.Model):
         return self._uam_open(self.env._('Model Usage'), 'uam.model.usage', [('user_id', '=', self.id)])
 
     def action_uam_open_changes(self):
-        return self._uam_open(self.env._('Changes'), 'access.change.log',
-                              [('target_kind', '=', 'user'), ('target_name', '=', self.name)])
+        return self._uam_open(self.env._('Changes'), 'access.change.log', self._uam_change_domain())
 
     TIMELINE_LIMIT = 50
 
@@ -158,8 +160,7 @@ class ResUsers(models.Model):
         """(utc datetime, badge modifier, sentence) tuples, newest first."""
         self.ensure_one()
         ev = []
-        for c in self.env['access.change.log'].search(
-                [('target_kind', '=', 'user'), ('target_name', '=', self.name)], limit=self.TIMELINE_LIMIT):
+        for c in self.env['access.change.log'].search(self._uam_change_domain(), limit=self.TIMELINE_LIMIT):
             what = c.new_value or c.old_value
             ev.append((c.date, 'online' if c.action == 'add' else 'alert',
                        self.env._('%(action)s %(label)s: %(what)s (by %(by)s)', action=c.action.capitalize(),
@@ -195,7 +196,7 @@ class ResUsers(models.Model):
                 self.env['access.change.log']._log(
                     action, 'user', user.name, 'Groups',
                     '' if action == 'add' else group.full_name,
-                    group.full_name if action == 'add' else '')
+                    group.full_name if action == 'add' else '', user_id=user.id)
 
     def _log_group_changes(self, vals, old_group_ids, editing_groups=None):                # overriding base method
         for user in self.sudo():
