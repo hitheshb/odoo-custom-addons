@@ -95,6 +95,8 @@
                         <group>
                             <field name="im_status" widget="uam_status_dot" string="Status"/>
                             <field name="login_date" readonly="1" decoration-danger="uam_login_stale"/>
+                            <field name="uam_current_page"/>
+                            <field name="uam_last_seen" widget="relative_date"/>
                         </group>
                         <group>
                             <field name="uam_last_work" string="Last Work Update"/>

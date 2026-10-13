@@ -1,6 +1,7 @@
 from datetime import timedelta
 
 from odoo import api, fields, models
+from odoo.tools import SQL
 
 
 class ResUsers(models.Model):
@@ -16,6 +17,20 @@ class ResUsers(models.Model):
     uam_access_count = fields.Integer(string='Access Right Count', compute='_compute_uam_counts', compute_sudo=True)
 
     uam_last_work = fields.Char(compute='_compute_uam_last_work', compute_sudo=True)
+    uam_current_page = fields.Char('Current Page', readonly=True)
+    uam_last_seen = fields.Datetime('Last Seen', readonly=True)
+
+    @api.model
+    def uam_track(self, model, action, page):
+        if not model and action:
+            acts = self.env['ir.actions.act_window'].sudo()
+            act = acts.browse(int(action)).exists() if str(action).isdigit() else acts.search([('path', '=', action)], limit=1)
+            model = act.res_model
+        self.env.cr.execute(SQL('UPDATE res_users SET uam_current_page = %s, uam_last_seen = %s WHERE id = %s',
+                                (page or '')[:250], fields.Datetime.now(), self.env.uid))
+        if model:
+            self.env['uam.model.usage']._bump(self.env.uid, model)
+        return True
 
     def _compute_uam_last_work(self):
         for user in self:

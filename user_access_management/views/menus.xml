@@ -11,6 +11,7 @@
     <menuitem id="menu_uam_access_lock" name="Access Lock" parent="menu_uam_privileges" action="access_lock_action" sequence="60"/>
     <menuitem id="menu_uam_work" name="Work Updates" parent="menu_uam_logs" action="work_update_action" sequence="20"/>
     <menuitem id="menu_uam_print_log" name="Print Log" parent="menu_uam_logs" action="print_log_action" sequence="30"/>
+    <menuitem id="menu_uam_usage" name="Model Usage" parent="menu_uam_logs" action="model_usage_action" sequence="40"/>
     <menuitem id="menu_uam_config" name="Configuration" parent="menu_uam_root" sequence="90"/>
     <menuitem id="menu_uam_settings" name="Settings" parent="menu_uam_config" action="uam_settings_action" sequence="10"/>
 </odoo>
