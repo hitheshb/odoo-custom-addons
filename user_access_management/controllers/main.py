@@ -1,9 +1,13 @@
 import json
 import logging
 
+import werkzeug.exceptions
+
 from odoo import http
-from odoo.exceptions import ConcurrencyError
+from odoo.exceptions import ConcurrencyError, UserError
 from odoo.http import request, route
+from odoo.http.dispatcher import serialize_exception
+from odoo.tools.misc import html_escape
 
 from odoo.addons.rpc.controllers.json2 import WebJson2Controller
 from odoo.addons.web.controllers.dataset import DataSet
@@ -31,7 +35,13 @@ class UamReportController(ReportController):
         url, type_ = json.loads(data)[:2]
         report, ids = _parse_report_url(url, type_)
         if report:
-            request.env['uam.access.lock']._check(report.model, 'print', [ids])
+            try:
+                request.env['uam.access.lock']._check(report.model, 'print', [ids])
+            except UserError as e:
+                # same error shape as web's report_download, so the client shows the message
+                error = {'code': 0, 'message': "Odoo Server Error", 'data': serialize_exception(e)}
+                res = request.make_response(html_escape(json.dumps(error)))
+                raise werkzeug.exceptions.InternalServerError(response=res) from e
         response = super().report_download(data, context=context, token=token, readonly=readonly)
         if report and ids and response.status_code == 200 and response.mimetype == 'application/pdf':
             try:

@@ -69,6 +69,8 @@ class UamAccessLock(models.Model):
     def _method_key(self, method, args):
         if method in ('web_save', 'web_save_multi'):
             return 'write' if args and args[0] else 'create'
+        if method == 'web_unlink':
+            return 'unlink'
         return method
 
     @api.model
