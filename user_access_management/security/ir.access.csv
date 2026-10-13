@@ -6,3 +6,4 @@ access_uam_print_log_admin,uam.print.log admin,uam.print.log,base.group_system,r
 access_uam_access_lock_admin,uam.access.lock admin,uam.access.lock,base.group_system,crud,
 access_uam_lock_method_admin,uam.lock.method admin,uam.lock.method,base.group_system,crud,
 access_uam_model_usage_admin,uam.model.usage admin,uam.model.usage,base.group_system,r,
+access_uam_access_simulation_admin,uam.access.simulation admin,uam.access.simulation,base.group_system,crud,

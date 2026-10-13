@@ -16,6 +16,7 @@
         'views/print_log_views.xml',
         'views/access_lock_views.xml',
         'views/model_usage_views.xml',
+        'views/access_simulation_views.xml',
         'views/menus.xml',
         'data/ir_cron.xml',
         'data/uam_data.xml',

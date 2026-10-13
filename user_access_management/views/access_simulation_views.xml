@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="access_simulation_view_form" model="ir.ui.view">
+        <field name="name">uam.access.simulation.form</field>
+        <field name="model">uam.access.simulation</field>
+        <field name="arch" type="xml">
+            <form>
+                <group>
+                    <group>
+                        <field name="user_id" options="{'no_create': True}"/>
+                    </group>
+                    <group>
+                        <field name="model_id" options="{'no_create': True}" invisible="module_id"/>
+                        <field name="module_id" options="{'no_create': True}" invisible="model_id"/>
+                    </group>
+                </group>
+                <field name="report_html" nolabel="1"/>
+            </form>
+        </field>
+    </record>
+    <record id="access_simulation_action" model="ir.actions.act_window">
+        <field name="name">Access Simulation</field>
+        <field name="res_model">uam.access.simulation</field>
+        <field name="view_mode">form</field>
+        <field name="target">current</field>
+    </record>
+</odoo>
