@@ -28,3 +28,19 @@ class TestStaleLogin(TransactionCase):
         self.assertFalse(user.uam_login_stale)
         self.assertFalse(self.env['res.users'].search(stale))
         self.assertEqual(self.env['res.users'].search([('uam_login_stale', '=', False), ('id', '=', user.id)]), user)
+
+    def test_recent_login_among_old_ones_not_stale(self):
+        user = new_test_user(self.env, login='uam_mixed_user')
+        self._login_days_ago(user, 5)
+        self._login_days_ago(user, 0)
+        self.env['ir.config_parameter'].sudo().set_int('user_access_management.stale_login_days', 3)
+        self.assertFalse(user.uam_login_stale)
+        self.assertFalse(self.env['res.users'].search([('uam_login_stale', '=', True), ('id', '=', user.id)]))
+        self.assertEqual(self.env['res.users'].search([('uam_login_stale', '=', False), ('id', '=', user.id)]), user)
+
+    def test_never_logged_in_is_stale(self):
+        user = new_test_user(self.env, login='uam_never_user')
+        user.log_ids.unlink()
+        self.assertFalse(user.log_ids)
+        self.assertTrue(user.uam_login_stale)
+        self.assertEqual(self.env['res.users'].search([('uam_login_stale', '=', True), ('id', '=', user.id)]), user)

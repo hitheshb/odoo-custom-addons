@@ -39,8 +39,9 @@ class ResUsers(models.Model):
             positive = bool(value) == (operator == '=')
         else:
             return NotImplemented
-        domain = ['|', ('login_date', '=', False), ('login_date', '<', self._uam_stale_limit())]
-        return domain if positive else ['!', *domain]
+        # stale == no login log at/after the limit (login_date is the related first log, so don't search it)
+        recent = [('create_date', '>=', self._uam_stale_limit())]
+        return [('log_ids', 'not any' if positive else 'any', recent)]
 
     @api.depends('all_group_ids.access_ids')
     def _compute_uam_access_ids(self):
