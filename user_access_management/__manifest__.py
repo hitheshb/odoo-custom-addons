@@ -3,7 +3,7 @@
     'version': '20.0.1.0.0',
     'summary': 'See and edit what users, groups and access rights give, with a change log',
     'category': 'Administration',
-    'depends': ['base', 'mail'],
+    'depends': ['base', 'mail', 'rpc'],
     'data': [
         'security/ir.access.csv',
         'views/access_change_log_views.xml',
@@ -14,8 +14,10 @@
         'views/temp_access_views.xml',
         'views/res_config_settings_views.xml',
         'views/print_log_views.xml',
+        'views/access_lock_views.xml',
         'views/menus.xml',
         'data/ir_cron.xml',
+        'data/uam_data.xml',
     ],
     'assets': {
         'web.assets_backend': ['user_access_management/static/src/**/*'],

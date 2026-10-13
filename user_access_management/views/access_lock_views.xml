@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="access_lock_view_list" model="ir.ui.view">
+        <field name="name">uam.access.lock.list</field>
+        <field name="model">uam.access.lock</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="user_id" widget="many2one_avatar_user"/>
+                <field name="model_id"/>
+                <field name="method_ids" widget="many2many_tags"/>
+                <field name="forever"/>
+                <field name="date_until" widget="relative_date" invisible="forever"/>
+                <field name="note" optional="hide"/>
+            </list>
+        </field>
+    </record>
+    <record id="access_lock_view_form" model="ir.ui.view">
+        <field name="name">uam.access.lock.form</field>
+        <field name="model">uam.access.lock</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <widget name="web_ribbon" title="Archived" bg_color="text-bg-secondary" invisible="active"/>
+                    <field name="active" invisible="1"/>
+                    <group>
+                        <group>
+                            <field name="user_id"/>
+                            <field name="model_id" options="{'no_create': True}"/>
+                        </group>
+                        <group>
+                            <field name="forever"/>
+                            <field name="date_until" invisible="forever" required="not forever"/>
+                            <field name="note"/>
+                        </group>
+                    </group>
+                    <separator string="Methods to block" invisible="not model_id"/>
+                    <field name="method_ids" widget="many2many_checkboxes" invisible="not model_id"/>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="access_lock_view_search" model="ir.ui.view">
+        <field name="name">uam.access.lock.search</field>
+        <field name="model">uam.access.lock</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="user_id"/>
+                <field name="model_id"/>
+                <filter name="archived" string="Archived" domain="[('active', '=', False)]"/>
+            </search>
+        </field>
+    </record>
+    <record id="access_lock_action" model="ir.actions.act_window">
+        <field name="name">Access Lock</field>
+        <field name="res_model">uam.access.lock</field>
+        <field name="view_mode">list,form</field>
+    </record>
+</odoo>
