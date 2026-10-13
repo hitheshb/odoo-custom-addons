@@ -42,7 +42,7 @@ class TestDashboard(TransactionCase):
         self.env['res.users'].with_user(admin).uam_track('res.partner', False, 'Contacts')
         self.env.invalidate_all()
         data = self.env['uam.dashboard'].with_user(admin).get_data()
-        row = next(u for u in data['usage'] if u['model'] == 'res.partner')
+        row = next(u for u in data['usage'] if u['model'] == 'res.partner' and u['user_id'] == admin.id)
         usage = self.env['uam.model.usage'].search([('user_id', '=', admin.id), ('model', '=', 'res.partner')],
                                                    order='date desc', limit=1)
         self.assertEqual(row['last_seen'], format_datetime(self.env, usage.last_seen, tz='Asia/Kolkata'))
