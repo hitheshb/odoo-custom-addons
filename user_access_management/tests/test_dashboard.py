@@ -1,3 +1,6 @@
+from datetime import datetime
+from unittest.mock import patch
+
 from odoo import fields
 from odoo.exceptions import AccessError
 from odoo.tests import TransactionCase, tagged
@@ -49,11 +52,16 @@ class TestDashboard(TransactionCase):
         self.assertNotEqual(row['last_seen'], fields.Datetime.to_string(usage.last_seen))
 
     def test_prints_today_uses_user_tz(self):
-        from unittest.mock import patch
-        from datetime import datetime
         admin = self.env.ref('base.user_admin')
         admin.tz = 'Asia/Kolkata'   # UTC+5:30
         # 20:00 UTC on Oct 13 is 01:30 on Oct 14 in Kolkata, so "today" starts at Oct 13 18:30 UTC
         with patch('odoo.fields.Datetime.now', return_value=datetime(2026, 10, 13, 20, 0)):
             domain = self.env['uam.dashboard'].with_user(admin)._tile_domains()['prints_today'][1]
         self.assertEqual(domain, [('create_date', '>=', '2026-10-13 18:30:00')])
+
+    def test_prints_today_dst_change_day(self):
+        admin = self.env.ref('base.user_admin')
+        admin.tz = 'America/New_York'   # DST starts 2026-03-08 02:00; midnight is still UTC-5
+        with patch('odoo.fields.Datetime.now', return_value=datetime(2026, 3, 8, 12, 0)):
+            domain = self.env['uam.dashboard'].with_user(admin)._tile_domains()['prints_today'][1]
+        self.assertEqual(domain, [('create_date', '>=', '2026-03-08 05:00:00')])

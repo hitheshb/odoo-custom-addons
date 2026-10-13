@@ -23,8 +23,9 @@ class UamDashboard(models.AbstractModel):
         now = fields.Datetime.now()
         users = self._users()
         tz = pytz.timezone(self.env.user.tz or 'UTC')
-        local_midnight = pytz.utc.localize(now).astimezone(tz).replace(hour=0, minute=0, second=0, microsecond=0)
-        today = fields.Datetime.to_string(local_midnight.astimezone(pytz.utc).replace(tzinfo=None))
+        local = pytz.utc.localize(now).astimezone(tz).replace(tzinfo=None)
+        start = tz.localize(local.replace(hour=0, minute=0, second=0, microsecond=0))  # offset at midnight, not now (DST)
+        today = fields.Datetime.to_string(start.astimezone(pytz.utc).replace(tzinfo=None))
         return {
             'online': ('res.users', [('id', 'in', users.filtered(lambda u: u.im_status == 'online').ids)]),
             'away': ('res.users', [('id', 'in', users.filtered(lambda u: u.im_status == 'away').ids)]),
