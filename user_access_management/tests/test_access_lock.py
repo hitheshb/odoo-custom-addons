@@ -83,6 +83,61 @@ class TestAccessLock(TransactionCase):
         with self.assertRaises(ValidationError):
             self._lock(['create'], forever=False)
 
+    def _group_lock(self, group, names, **vals):
+        return self.Lock.create({
+            'group_id': group.id, 'model_id': self.partner_model.id,
+            'method_ids': [(6, 0, self.methods.filtered(lambda m: m.name in names).ids)],
+            'forever': True, **vals,
+        })
+
+    def test_group_lock_follows_membership(self):
+        group = self.env['res.groups'].create({'name': 'UAM lock group'})
+        self._group_lock(group, ['create'])
+        self.Lock.with_user(self.user)._check('res.partner', 'create', [{}])  # not a member yet
+        self.user.write({'group_ids': [(4, group.id)]})
+        with self.assertRaises(UserError):
+            self.Lock.with_user(self.user)._check('res.partner', 'create', [{}])
+        self.user.write({'group_ids': [(3, group.id)]})
+        self.Lock.with_user(self.user)._check('res.partner', 'create', [{}])
+
+    def test_user_or_group_required(self):
+        group = self.env['res.groups'].create({'name': 'UAM both'})
+        with self.assertRaises(ValidationError):
+            self.Lock.create({'model_id': self.partner_model.id, 'forever': True,
+                              'method_ids': [(6, 0, self.methods[:1].ids)]})
+        with self.assertRaises(ValidationError):
+            self.Lock.create({'user_id': self.user.id, 'group_id': group.id, 'model_id': self.partner_model.id,
+                              'forever': True, 'method_ids': [(6, 0, self.methods[:1].ids)]})
+
+    def test_no_lock_on_lock_screen(self):
+        lock_model = self.env['ir.model']._get('uam.access.lock')
+        methods = self.env['uam.lock.method']._sync_for_model('uam.access.lock')
+        with self.assertRaises(ValidationError):
+            self.Lock.create({'user_id': self.user.id, 'model_id': lock_model.id, 'forever': True,
+                              'method_ids': [(6, 0, methods[:1].ids)]})
+
+    def test_no_admin_lockout_on_admin_models(self):
+        admin = self.env.ref('base.user_admin')
+        users_model = self.env['ir.model']._get('res.users')
+        methods = self.env['uam.lock.method']._sync_for_model('res.users')
+        with self.assertRaises(ValidationError):
+            self.Lock.create({'user_id': admin.id, 'model_id': users_model.id, 'forever': True,
+                              'method_ids': [(6, 0, methods.filtered(lambda m: m.name == 'write').ids)]})
+        with self.assertRaises(ValidationError):
+            self.Lock.create({'group_id': self.env.ref('base.group_system').id, 'model_id': users_model.id,
+                              'forever': True, 'method_ids': [(6, 0, methods.filtered(lambda m: m.name == 'write').ids)]})
+
+    def test_state_unlock_extend(self):
+        lock = self._lock(['create'], forever=False, date_until=fields.Datetime.now() + timedelta(hours=1))
+        self.assertEqual(lock.lock_state, 'active')
+        before = lock.date_until
+        lock.action_extend_day()
+        self.assertEqual(lock.date_until, before + timedelta(days=1))
+        lock.action_unlock()
+        self.assertFalse(lock.active)
+        self.assertEqual(lock.lock_state, 'expired')
+        self.assertEqual(self._lock(['write']).lock_state, 'forever')
+
 
 @tagged('post_install', '-at_install')
 class TestAccessLockHttp(HttpCase):

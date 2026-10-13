@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 from lxml import etree
 
 from odoo import api, fields, models
@@ -5,6 +7,8 @@ from odoo.exceptions import UserError, ValidationError
 from odoo.tools import format_datetime
 
 FIXED_METHODS = [('create', 'Create'), ('write', 'Edit'), ('unlink', 'Delete'), ('print', 'Print')]
+PROTECTED_MODELS = {'uam.access.lock', 'uam.lock.method'}
+ADMIN_MODELS = {'res.users', 'res.groups', 'ir.access'}
 
 
 class UamLockMethod(models.Model):
@@ -45,7 +49,9 @@ class UamAccessLock(models.Model):
     _description = 'Access Lock'
     _order = 'id desc'
 
-    user_id = fields.Many2one('res.users', required=True, ondelete='cascade', index=True)
+    user_id = fields.Many2one('res.users', ondelete='cascade', index=True)
+    group_id = fields.Many2one('res.groups', string='Group', ondelete='cascade', index=True,
+                               help="Lock everyone in this group, including people who join later.")
     model_id = fields.Many2one('ir.model', required=True, ondelete='cascade', index=True)
     method_ids = fields.Many2many('uam.lock.method', string='Methods', required=True,
                                   domain="[('model_id', '=', model_id)]")
@@ -53,6 +59,45 @@ class UamAccessLock(models.Model):
     forever = fields.Boolean()
     active = fields.Boolean(default=True)
     note = fields.Char()
+    lock_state = fields.Selection([('active', 'Active'), ('forever', 'Forever'), ('expired', 'Expired')],
+                                  compute='_compute_lock_state')
+
+    @api.depends('active', 'forever', 'date_until')
+    def _compute_lock_state(self):
+        now = fields.Datetime.now()
+        for lock in self:
+            if not lock.active or (not lock.forever and lock.date_until and lock.date_until <= now):
+                lock.lock_state = 'expired'
+            else:
+                lock.lock_state = 'forever' if lock.forever else 'active'
+
+    @api.constrains('user_id', 'group_id', 'model_id')
+    def _check_target(self):
+        admins = self.env.ref('base.group_system').all_user_ids
+        for lock in self:
+            if bool(lock.user_id) == bool(lock.group_id):
+                raise ValidationError(self.env._('Choose either a user or a group, not both.'))
+            if lock.model_id.model in PROTECTED_MODELS:
+                raise ValidationError(self.env._('The Access Lock screen itself cannot be locked.'))
+            targets = lock.user_id | lock.group_id.all_user_ids
+            if lock.model_id.model in ADMIN_MODELS and targets & admins:
+                raise ValidationError(self.env._(
+                    'This lock would block an administrator from managing users and rights.'))
+
+    def action_unlock(self):
+        self.active = False
+
+    def _extend(self, delta):
+        now = fields.Datetime.now()
+        for lock in self.filtered(lambda l: not l.forever):
+            lock.date_until = max(lock.date_until or now, now) + delta
+            lock.active = True
+
+    def action_extend_day(self):
+        self._extend(timedelta(days=1))
+
+    def action_extend_week(self):
+        self._extend(timedelta(weeks=1))
 
     @api.constrains('forever', 'date_until')
     def _check_until(self):
@@ -60,11 +105,12 @@ class UamAccessLock(models.Model):
             if not lock.forever and not lock.date_until:
                 raise ValidationError(self.env._("Set 'Locked Until' or tick 'Forever'."))
 
-    @api.depends('user_id', 'model_id')
+    @api.depends('user_id', 'group_id', 'model_id')
     def _compute_display_name(self):
         for lock in self:
-            lock.display_name = (f'{lock.user_id.name} – {lock.model_id.name}'
-                                 if lock.user_id and lock.model_id else self.env._('New Lock'))
+            target = lock.user_id.name or lock.group_id.full_name
+            lock.display_name = (f'{target} – {lock.model_id.name}'
+                                 if target and lock.model_id else self.env._('New Lock'))
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -98,7 +144,8 @@ class UamAccessLock(models.Model):
     def _check(self, model, method, args):
         key = self._method_key(method, args)
         lock = self.sudo().search([
-            ('user_id', '=', self.env.uid), ('model_id.model', '=', model), ('method_ids.name', '=', key),
+            '|', ('user_id', '=', self.env.uid), ('group_id', 'in', self.env.user.sudo().all_group_ids.ids),
+            ('model_id.model', '=', model), ('method_ids.name', '=', key),
             '|', ('forever', '=', True), ('date_until', '>', fields.Datetime.now()),
         ], limit=1)
         if lock:
