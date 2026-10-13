@@ -1,72 +1,88 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <templates xml:space="preserve">
     <t t-name="user_access_management.Dashboard">
-        <div class="o_action p-3 overflow-auto h-100 bg-view">
+        <div class="o_action o_uam_dash overflow-auto h-100">
             <t t-set="d" t-value="this.state.data"/>
-            <div class="d-flex align-items-center mb-3">
-                <h2 class="me-auto mb-0">User Access Dashboard</h2>
-                <input type="date" class="form-control w-auto" t-att-value="this.state.date" t-on-change="this.onDate"/>
-            </div>
-            <div class="row g-2 mb-3">
-                <div t-foreach="d.tiles" t-as="tile" t-key="tile.key" class="col-6 col-md-4 col-xl-2">
-                    <div class="card h-100 cursor-pointer" t-on-click="() => this.openTile(tile.key)">
-                        <div class="card-body">
-                            <div class="fs-2 fw-bold" t-esc="tile.count"/>
-                            <div class="text-muted"><i t-attf-class="fa {{ tile.icon }} me-1"/><t t-esc="tile.label"/></div>
-                        </div>
+
+            <section class="o_uam_board">
+                <header class="o_uam_board__head">
+                    <h1 class="o_uam_title">Who's in</h1>
+                    <div class="o_uam_datepick">
+                        <button class="o_uam_iconbtn" title="Previous day" aria-label="Previous day" t-on-click="() => this.step(-1)"><span class="oi" data-icon="chevron_backward"/></button>
+                        <label class="o_uam_datepick__label">
+                            <span t-out="this.isToday ? 'Today' : this.dateLabel"/>
+                            <input type="date" t-att-value="this.state.date" t-on-change="this.onDate" aria-label="Pick a day"/>
+                        </label>
+                        <button class="o_uam_iconbtn" title="Next day" aria-label="Next day" t-att-disabled="this.isToday" t-on-click="() => this.step(1)"><span class="oi" data-icon="chevron_forward"/></button>
                     </div>
+                </header>
+
+                <div class="o_uam_people">
+                    <button t-foreach="this.here" t-as="u" t-key="u.id"
+                            t-attf-class="o_uam_person o_uam_person--{{ u.status }}" t-on-click="() => this.openUser(u.id)">
+                        <span class="o_uam_person__ring"><img t-att-src="this.avatar(u.id)" alt=""/></span>
+                        <span class="o_uam_person__name" t-out="u.name"/>
+                        <span class="o_uam_person__page" t-out="u.page or 'Just arrived'"/>
+                        <span class="o_uam_person__seen" t-out="u.status === 'away' ? 'Away' : this.ago(u.last_seen_utc)"/>
+                    </button>
+                    <p t-if="!this.here.length" class="o_uam_empty">Nobody is signed in right now.</p>
                 </div>
-            </div>
-            <div class="card mb-3">
-                <div class="card-header fw-bold">Users right now</div>
-                <table class="table table-sm table-hover mb-0">
-                    <thead><tr><th>User</th><th>Page open</th><th>Last seen</th><th>Last login</th></tr></thead>
-                    <tbody>
-                        <tr t-foreach="d.users" t-as="u" t-key="u.id">
-                            <td>
-                                <span t-attf-class="d-inline-block rounded-circle me-2 bg-{{ u.status === 'online' ? 'success' : u.status === 'away' ? 'warning' : 'secondary' }}" style="width: 10px; height: 10px;"/>
-                                <a href="#" t-on-click.prevent="() => this.openUser(u.id)" t-esc="u.name"/>
-                                <span t-if="u.stale" class="badge text-bg-danger ms-2">Stale</span>
-                            </td>
-                            <td t-esc="u.page"/>
-                            <td t-esc="u.last_seen or '-'"/>
-                            <td t-esc="u.login_date or 'never'"/>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-            <div class="row g-3">
-                <div class="col-lg-7">
-                    <div class="card">
-                        <div class="card-header fw-bold">Models used on <t t-esc="d.date"/></div>
-                        <table class="table table-sm table-hover mb-0">
-                            <thead><tr><th>User</th><th>Model</th><th class="text-end">Views</th><th>Last</th></tr></thead>
-                            <tbody>
-                                <tr t-foreach="d.usage" t-as="r" t-key="r_index" class="cursor-pointer" t-on-click="() => this.openUsage(r.user_id)">
-                                    <td t-esc="r.user"/><td t-esc="r.model_name"/>
-                                    <td class="text-end" t-esc="r.views"/><td t-esc="r.last_seen"/>
-                                </tr>
-                                <tr t-if="!d.usage.length"><td colspan="4" class="text-muted">No activity on this day.</td></tr>
-                            </tbody>
-                        </table>
+
+                <button class="o_uam_others__toggle" t-on-click="this.toggleOthers" t-att-aria-expanded="this.state.showOthers ? 'true' : 'false'">
+                    <span class="oi" t-att-data-icon="this.state.showOthers ? 'arrow_drop_down' : 'arrow_right'"/>
+                    Everyone else (<t t-out="this.others.length"/>)
+                    <span t-if="this.staleCount" class="o_uam_others__stale"><t t-out="this.staleCount"/> haven't logged in recently</span>
+                </button>
+                <ul t-if="this.state.showOthers" class="o_uam_others">
+                    <li t-foreach="this.others" t-as="u" t-key="u.id">
+                        <a href="#" t-on-click.prevent="() => this.openUser(u.id)">
+                            <img t-att-src="this.avatar(u.id)" alt=""/>
+                            <span class="o_uam_others__name" t-out="u.name"/>
+                            <span t-attf-class="o_uam_others__login {{ u.stale ? 'is-stale' : '' }}"
+                                  t-out="u.login_date ? 'Last login ' + u.login_date : 'Never logged in'"/>
+                        </a>
+                    </li>
+                </ul>
+            </section>
+
+            <nav class="o_uam_chips" aria-label="Summary">
+                <button t-foreach="d.tiles" t-as="tile" t-key="tile.key" t-att-class="this.tileClass(tile)" t-on-click="() => this.openTile(tile.key)">
+                    <span class="o_uam_chip__count" t-out="tile.count"/>
+                    <span class="o_uam_chip__label" t-out="tile.label"/>
+                </button>
+            </nav>
+
+            <div class="o_uam_split">
+                <section class="o_uam_panel">
+                    <h2 class="o_uam_panel__title">Activity <t t-out="this.isToday ? 'today' : 'on ' + this.dateLabel"/></h2>
+                    <div t-foreach="this.activity" t-as="g" t-key="g.userId" class="o_uam_act">
+                        <button class="o_uam_act__user" t-on-click="() => this.openUsage(g.userId)">
+                            <img t-att-src="this.avatar(g.userId)" alt=""/>
+                            <span t-out="g.user"/>
+                        </button>
+                        <ol class="o_uam_act__bars">
+                            <li t-foreach="g.rows" t-as="r" t-key="r.model">
+                                <span class="o_uam_bar" t-attf-style="--w: {{ r.width }}%"/>
+                                <span class="o_uam_bar__model" t-out="r.model_name"/>
+                                <span class="o_uam_bar__views" t-out="r.views" t-att-title="r.views + ' screens opened, last at ' + r.last_seen"/>
+                            </li>
+                        </ol>
                     </div>
-                </div>
-                <div class="col-lg-5">
-                    <div class="card">
-                        <div class="card-header fw-bold">Recent prints</div>
-                        <table class="table table-sm mb-0">
-                            <tbody>
-                                <tr t-foreach="d.prints" t-as="p" t-key="p.id">
-                                    <td t-esc="p.document"/>
-                                    <td><span t-attf-class="badge text-bg-{{ p.label === 'Original' ? 'success' : 'warning' }}" t-esc="p.label"/></td>
-                                    <td t-esc="p.user"/>
-                                    <td><a t-att-href="p.url" title="Download"><i class="fa fa-download"/></a></td>
-                                </tr>
-                                <tr t-if="!d.prints.length"><td class="text-muted">No prints yet.</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+                    <p t-if="!this.activity.length" class="o_uam_empty">No screens were opened on this day.</p>
+                </section>
+
+                <section class="o_uam_panel">
+                    <h2 class="o_uam_panel__title">Print log</h2>
+                    <ul class="o_uam_prints">
+                        <li t-foreach="d.prints" t-as="p" t-key="p.id">
+                            <span class="o_uam_prints__doc" t-out="p.document"/>
+                            <span t-attf-class="o_uam_stub {{ p.label === 'Original' ? 'is-original' : 'is-copy' }}" t-out="p.label"/>
+                            <span class="o_uam_prints__meta"><t t-out="p.user"/>, <t t-out="p.date"/></span>
+                            <a class="o_uam_iconbtn" t-att-href="p.url" title="Download this copy" aria-label="Download this copy"><span class="oi" data-icon="download"/></a>
+                        </li>
+                    </ul>
+                    <p t-if="!d.prints.length" class="o_uam_empty">Downloaded PDFs will show up here.</p>
+                </section>
             </div>
         </div>
     </t>

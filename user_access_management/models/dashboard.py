@@ -50,6 +50,7 @@ class UamDashboard(models.AbstractModel):
             'tiles': tiles,
             'users': [{'id': u.id, 'name': u.name, 'status': u.im_status, 'page': u.uam_current_page or '',
                        'last_seen': dt(u.uam_last_seen),
+                       'last_seen_utc': fields.Datetime.to_string(u.uam_last_seen) if u.uam_last_seen else False,
                        'login_date': dt(u.login_date),
                        'stale': u.uam_login_stale} for u in users],
             'usage': [{'user_id': r.user_id.id, 'user': r.user_id.name, 'model': r.model,
