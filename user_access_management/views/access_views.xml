@@ -8,10 +8,10 @@
                 <field name="name"/>
                 <field name="model_id"/>
                 <field name="group_id"/>
-                <field name="operation"/>
-                <field name="domain"/>
-                <field name="kind"/>
-                <field name="uam_user_count" string="Users"/>
+                <field name="operation" widget="badge" width="170px"/>
+                <field name="domain" optional="show"/>
+                <field name="kind" widget="badge" width="120px" decoration-success="kind == 'permission'" decoration-danger="kind == 'restriction'"/>
+                <field name="uam_user_count" string="All Users"/>
             </list>
         </field>
     </record>
@@ -22,25 +22,30 @@
         <field name="arch" type="xml">
             <form>
                 <sheet>
+                    <widget name="web_ribbon" title="Standard" bg_color="text-bg-secondary" invisible="not is_standard"/>
+                    <widget name="web_ribbon" title="Restriction" bg_color="text-bg-danger" invisible="is_standard or kind != 'restriction'"/>
                     <div class="oe_button_box" name="button_box">
                         <button class="oe_stat_button" type="object" name="action_open_users"
                                 icon="fa-users" invisible="not group_id">
-                            <field name="uam_user_count" widget="statinfo" string="Users"/>
+                            <field name="uam_user_count" widget="statinfo" string="All Users"/>
                         </button>
+                    </div>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name" readonly="is_standard" placeholder="Access name"/></h1>
                     </div>
                     <group>
                         <group>
-                            <field name="name" readonly="is_standard"/>
                             <field name="model_id" readonly="is_standard"/>
                             <field name="group_id" readonly="is_standard"
                                    context="{'form_view_ref': 'user_access_management.group_form_view'}"/>
                         </group>
                         <group>
-                            <field name="for_create" readonly="is_standard"/>
-                            <field name="for_read" readonly="is_standard"/>
-                            <field name="for_write" readonly="is_standard"/>
-                            <field name="for_unlink" readonly="is_standard"/>
-                            <field name="kind"/>
+                            <field name="for_create" widget="boolean_toggle" readonly="is_standard"/>
+                            <field name="for_read" widget="boolean_toggle" readonly="is_standard"/>
+                            <field name="for_write" widget="boolean_toggle" readonly="is_standard"/>
+                            <field name="for_unlink" widget="boolean_toggle" readonly="is_standard"/>
+                            <field name="kind" widget="badge" decoration-success="kind == 'permission'" decoration-danger="kind == 'restriction'"/>
                             <field name="is_standard" invisible="1"/>
                         </group>
                     </group>

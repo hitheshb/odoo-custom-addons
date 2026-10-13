@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="user_access_management.StatusDot">
+        <span class="d-inline-block rounded-circle" t-attf-class="bg-{{ this.color }}" style="width: 10px; height: 10px;"/>
+    </t>
+
+    <t t-name="user_access_management.WorkPromptDialog">
+        <Dialog title="'What are you working on?'" size="'md'">
+            <p class="mb-2">What is going on right now, and what do you need to do next?</p>
+            <textarea class="form-control" rows="4" t-ref="this.inputRef"/>
+            <t t-set-slot="footer">
+                <button class="btn btn-primary" t-on-click="() => this.send(this.inputRef().value)">Submit</button>
+                <button class="btn btn-secondary" t-on-click="() => this.send('')">Skip</button>
+            </t>
+        </Dialog>
+    </t>
+</templates>

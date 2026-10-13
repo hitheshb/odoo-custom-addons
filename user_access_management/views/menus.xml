@@ -2,7 +2,11 @@
 <odoo>
     <menuitem id="menu_uam_root" name="User Access" sequence="91" groups="base.group_system"/>
     <menuitem id="menu_uam_users" name="Users" parent="menu_uam_root" action="user_action" sequence="10"/>
-    <menuitem id="menu_uam_groups" name="Groups" parent="menu_uam_root" action="group_action" sequence="20"/>
-    <menuitem id="menu_uam_access" name="Access Rights" parent="menu_uam_root" action="access_action" sequence="30"/>
-    <menuitem id="menu_uam_log" name="Change Log" parent="menu_uam_root" action="access_change_log_action" sequence="40"/>
+    <menuitem id="menu_uam_privileges" name="Privileges" parent="menu_uam_root" sequence="20"/>
+    <menuitem id="menu_uam_groups" name="Groups" parent="menu_uam_privileges" action="group_action" sequence="20"/>
+    <menuitem id="menu_uam_access" name="Access Rights" parent="menu_uam_privileges" action="access_action" sequence="30"/>
+    <menuitem id="menu_uam_logs" name="Logs" parent="menu_uam_root" sequence="40"/>
+    <menuitem id="menu_uam_log" name="Change Log" parent="menu_uam_logs" action="access_change_log_action" sequence="10"/>
+    <menuitem id="menu_uam_temp_access" name="Temporary Access" parent="menu_uam_privileges" action="temp_access_action" sequence="50"/>
+    <menuitem id="menu_uam_work" name="Work Updates" parent="menu_uam_logs" action="work_update_action" sequence="20"/>
 </odoo>

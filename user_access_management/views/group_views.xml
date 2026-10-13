@@ -4,10 +4,34 @@
         <field name="name">user.access.group.list</field>
         <field name="model">res.groups</field>
         <field name="arch" type="xml">
-            <list>
+            <list decoration-info="uam_group_type == 'template'" decoration-warning="uam_group_type == 'role'"
+                  decoration-success="uam_group_type == 'switch'">
                 <field name="full_name"/>
-                <field name="privilege_id"/>
+                <field name="uam_group_type" widget="badge" invisible="uam_group_type == 'normal'"
+                       decoration-info="uam_group_type == 'template'" decoration-warning="uam_group_type == 'role'"
+                       decoration-success="uam_group_type == 'switch'"/>
+                <field name="privilege_id" widget="badge"/>
+                <field name="uam_user_count" string="All Users" optional="show"/>
+                <field name="uam_access_count" string="Rights" optional="show"/>
             </list>
+        </field>
+    </record>
+
+    <record id="group_search_view" model="ir.ui.view">
+        <field name="name">user.access.group.search</field>
+        <field name="model">res.groups</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="full_name" string="Group"/>
+                <field name="privilege_id"/>
+                <field name="user_ids"/>
+                <filter name="with_users" string="Has Users" domain="[('all_user_ids', '!=', False)]"/>
+                <filter name="no_users" string="No Users" domain="[('all_user_ids', '=', False)]"/>
+                <filter name="no_rights" string="No Rights Of Its Own" domain="[('access_ids', '=', False)]"/>
+                <group>
+                    <filter name="group_privilege" string="Privilege" context="{'group_by': 'privilege_id'}"/>
+                </group>
+            </search>
         </field>
     </record>
 
@@ -17,12 +41,26 @@
         <field name="arch" type="xml">
             <form>
                 <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button class="oe_stat_button" type="object" name="action_uam_open_users">
+                            <field name="uam_user_count" widget="statinfo" string="All Users"/>
+                        </button>
+                        <button class="oe_stat_button" type="object" name="action_uam_open_access">
+                            <field name="uam_access_count" widget="statinfo" string="Access Rights"/>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name" placeholder="Group name"/></h1>
+                    </div>
                     <group>
-                        <field name="name"/>
                         <field name="privilege_id"/>
+                        <field name="uam_group_type" widget="badge" invisible="uam_group_type == 'normal'"
+                               decoration-info="uam_group_type == 'template'" decoration-warning="uam_group_type == 'role'"
+                               decoration-success="uam_group_type == 'switch'"/>
                     </group>
                     <notebook>
-                        <page string="Users" name="users">
+                        <page string="Direct Users" name="users">
                             <field name="user_ids" context="{'form_view_ref': 'user_access_management.user_form_view', 'list_view_ref': 'user_access_management.user_list_view'}"/>
                         </page>
                         <page string="Implied Groups" name="implied">
@@ -47,6 +85,7 @@
         <field name="name">Groups</field>
         <field name="res_model">res.groups</field>
         <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="group_search_view"/>
     </record>
     <record id="group_action_list" model="ir.actions.act_window.view">
         <field name="sequence" eval="1"/>

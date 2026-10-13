@@ -6,13 +6,13 @@
         <field name="arch" type="xml">
             <list create="false" edit="false" delete="false">
                 <field name="date"/>
-                <field name="acting_user_id"/>
-                <field name="action"/>
-                <field name="target_kind"/>
-                <field name="target_name"/>
-                <field name="field_label"/>
-                <field name="old_value"/>
-                <field name="new_value"/>
+                <field name="acting_user_id" widget="many2one_avatar_user"/>
+                <field name="action" widget="badge" decoration-success="action in ('create', 'add')" decoration-warning="action == 'edit'" decoration-danger="action in ('delete', 'remove')"/>
+                <field name="target_kind" widget="badge" width="120px"/>
+                <field name="target_name" class="fw-bold"/>
+                <field name="field_label" optional="show"/>
+                <field name="old_value" class="text-danger" optional="show"/>
+                <field name="new_value" class="text-success" optional="show"/>
             </list>
         </field>
     </record>
@@ -27,6 +27,14 @@
                 <field name="old_value"/>
                 <field name="new_value"/>
                 <filter name="today" string="Today" domain="[('date', '&gt;=', context_today().strftime('%Y-%m-%d'))]"/>
+                <filter name="week" string="Last 7 Days" domain="[('date', '&gt;=', (context_today() - relativedelta(days=7)).strftime('%Y-%m-%d'))]"/>
+                <separator/>
+                <filter name="f_added" string="Added / Created" domain="[('action', 'in', ('create', 'add'))]"/>
+                <filter name="f_removed" string="Removed / Deleted" domain="[('action', 'in', ('delete', 'remove'))]"/>
+                <separator/>
+                <filter name="f_user" string="Users" domain="[('target_kind', '=', 'user')]"/>
+                <filter name="f_group" string="Groups" domain="[('target_kind', '=', 'group')]"/>
+                <filter name="f_access" string="Access Rights" domain="[('target_kind', '=', 'access')]"/>
                 <group>
                     <filter name="group_action" string="Action" context="{'group_by': 'action'}"/>
                     <filter name="group_kind" string="Target Kind" context="{'group_by': 'target_kind'}"/>
@@ -37,9 +45,20 @@
         </field>
     </record>
 
+    <record id="access_change_log_graph_view" model="ir.ui.view">
+        <field name="name">access.change.log.graph</field>
+        <field name="model">access.change.log</field>
+        <field name="arch" type="xml">
+            <graph type="bar" stacked="1">
+                <field name="date" interval="day"/>
+                <field name="action"/>
+            </graph>
+        </field>
+    </record>
+
     <record id="access_change_log_action" model="ir.actions.act_window">
         <field name="name">Change Log</field>
         <field name="res_model">access.change.log</field>
-        <field name="view_mode">list</field>
+        <field name="view_mode">list,graph</field>
     </record>
 </odoo>
