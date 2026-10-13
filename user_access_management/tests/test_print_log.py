@@ -54,3 +54,26 @@ class TestPrintLog(TransactionCase):
     def test_display_name(self):
         log = self.Log._record(self.report, [1], b'%PDF')
         self.assertEqual(log.display_name, f'{log.record_name} (Original)')
+
+    def _aged(self, log, days):
+        self.env.cr.execute("UPDATE uam_print_log SET create_date = now() - interval '%s days' WHERE id = %s",
+                            (days, log.id))
+        self.env.invalidate_all()
+
+    def test_retention_deletes_old_with_attachment(self):
+        self.env['ir.config_parameter'].sudo().set_int('user_access_management.print_retention_days', 30)
+        old = self.Log._record(self.report, [10**9 + 1], b'%PDF')
+        new = self.Log._record(self.report, [10**9 + 2], b'%PDF')
+        att = old.attachment_id
+        self._aged(old, 40)
+        self.Log._gc_old_prints()
+        self.assertFalse(old.exists())
+        self.assertFalse(att.exists())
+        self.assertTrue(new.exists())
+
+    def test_retention_zero_keeps_all(self):
+        self.env['ir.config_parameter'].sudo().set_int('user_access_management.print_retention_days', 0)
+        old = self.Log._record(self.report, [10**9 + 3], b'%PDF')
+        self._aged(old, 4000)
+        self.Log._gc_old_prints()
+        self.assertTrue(old.exists())

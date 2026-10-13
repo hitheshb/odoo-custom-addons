@@ -1,4 +1,5 @@
 import hashlib
+from datetime import timedelta
 
 from psycopg2 import IntegrityError
 
@@ -57,6 +58,15 @@ class UamPrintLog(models.Model):
             'res_model': self._name, 'res_id': log.id,
         })
         return log
+
+    @api.autovacuum
+    def _gc_old_prints(self):
+        days = self.env['ir.config_parameter'].sudo().get_int('user_access_management.print_retention_days', 180)
+        if days <= 0:
+            return
+        old = self.sudo().search([('create_date', '<', fields.Datetime.now() - timedelta(days=days))])
+        old.attachment_id.unlink()
+        old.unlink()
 
     def action_download(self):
         self.ensure_one()

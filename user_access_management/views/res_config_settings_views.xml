@@ -13,6 +13,11 @@
                             <field name="uam_stale_login_days"/>
                         </setting>
                     </block>
+                    <block title="Print Log">
+                        <setting help="Older Print Log entries and their PDFs are deleted every night. 0 keeps them forever.">
+                            <field name="uam_print_retention_days"/>
+                        </setting>
+                    </block>
                 </app>
             </xpath>
         </field>

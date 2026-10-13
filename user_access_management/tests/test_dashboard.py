@@ -47,3 +47,13 @@ class TestDashboard(TransactionCase):
                                                    order='date desc', limit=1)
         self.assertEqual(row['last_seen'], format_datetime(self.env, usage.last_seen, tz='Asia/Kolkata'))
         self.assertNotEqual(row['last_seen'], fields.Datetime.to_string(usage.last_seen))
+
+    def test_prints_today_uses_user_tz(self):
+        from unittest.mock import patch
+        from datetime import datetime
+        admin = self.env.ref('base.user_admin')
+        admin.tz = 'Asia/Kolkata'   # UTC+5:30
+        # 20:00 UTC on Oct 13 is 01:30 on Oct 14 in Kolkata, so "today" starts at Oct 13 18:30 UTC
+        with patch('odoo.fields.Datetime.now', return_value=datetime(2026, 10, 13, 20, 0)):
+            domain = self.env['uam.dashboard'].with_user(admin)._tile_domains()['prints_today'][1]
+        self.assertEqual(domain, [('create_date', '>=', '2026-10-13 18:30:00')])
