@@ -35,3 +35,27 @@ class TestTracking(TransactionCase):
         self.env.invalidate_all()
         self.assertFalse(self._usage())
         self.assertEqual(self.user.uam_current_page, 'Dashboard')
+
+    def test_track_unknown_model_ignored(self):
+        self.Users.uam_track('not.a.model', False, 'X')
+        self.Users.uam_track('res.config.settings', False, 'X')
+        self.env.invalidate_all()
+        self.assertFalse(self._usage())
+        self.assertEqual(self.user.uam_current_page, 'X')
+
+    def test_track_resolves_xmlid(self):
+        self.Users.uam_track(False, 'base.action_partner_form', 'Contacts')
+        self.env.invalidate_all()
+        self.assertEqual(self._usage().model, 'res.partner')
+        self.Users.uam_track(False, 'base.menu_administration', 'Menu is not an action')
+        self.env.invalidate_all()
+        self.assertEqual(len(self._usage()), 1)
+
+    def test_track_resolves_path(self):
+        action = self.env['ir.actions.act_window'].create({
+            'name': 'UAM Path Test', 'res_model': 'res.partner', 'path': 'uam-path-test'})
+        self.assertTrue(action.path)
+        self.Users.uam_track(False, 'uam-path-test', 'Contacts')
+        self.Users.uam_track(False, '²', 'crafted')
+        self.env.invalidate_all()
+        self.assertEqual(self._usage().model, 'res.partner')

@@ -24,8 +24,19 @@ class ResUsers(models.Model):
     def uam_track(self, model, action, page):
         if not model and action:
             acts = self.env['ir.actions.act_window'].sudo()
-            act = acts.browse(int(action)).exists() if str(action).isdigit() else acts.search([('path', '=', action)], limit=1)
+            if isinstance(action, int) or (isinstance(action, str) and action.isascii() and action.isdigit()):
+                act = acts.browse(int(action)).exists()
+            elif isinstance(action, str) and '.' in action:
+                act = self.env.ref(action, raise_if_not_found=False)
+                act = act.sudo() if act is not None and act._name == 'ir.actions.act_window' else acts
+            elif isinstance(action, str):
+                act = acts.search([('path', '=', action)], limit=1)
+            else:
+                act = acts
             model = act.res_model
+        # the client controls `model`: keep only real, non-transient models
+        if not isinstance(model, str) or model not in self.env or self.env[model]._transient:
+            model = False
         self.env.cr.execute(SQL('UPDATE res_users SET uam_current_page = %s, uam_last_seen = %s WHERE id = %s',
                                 (page or '')[:250], fields.Datetime.now(), self.env.uid))
         if model:
