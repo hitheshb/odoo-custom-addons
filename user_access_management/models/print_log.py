@@ -28,6 +28,11 @@ class UamPrintLog(models.Model):
         for log in self:
             log.label = f'Copy-{log.copy_no}' if log.copy_no else 'Original'
 
+    @api.depends('record_name', 'res_ids', 'copy_no')
+    def _compute_display_name(self):
+        for log in self:
+            log.display_name = f'{log.record_name or (log.res_ids or "")[:50]} ({log.label})'
+
     @api.model
     def _record(self, report, res_ids, content):
         ids = sorted(set(res_ids))

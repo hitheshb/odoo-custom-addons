@@ -23,6 +23,11 @@ class UamModelUsage(models.Model):
         for row in self:
             row.model_name = names.get(row.model, row.model)
 
+    @api.depends('user_id', 'model_name', 'date')
+    def _compute_display_name(self):
+        for row in self:
+            row.display_name = f'{row.user_id.name} – {row.model_name} – {row.date}'
+
     @api.model
     def _bump(self, user_id, model):
         now = fields.Datetime.now()

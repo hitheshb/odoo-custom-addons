@@ -1,13 +1,9 @@
 import json
 import logging
 
-import werkzeug.exceptions
-
 from odoo import http
-from odoo.exceptions import ConcurrencyError, UserError
+from odoo.exceptions import ConcurrencyError
 from odoo.http import request, route
-from odoo.http.dispatcher import serialize_exception
-from odoo.tools.misc import html_escape
 
 from odoo.addons.rpc.controllers.json2 import WebJson2Controller
 from odoo.addons.web.controllers.dataset import DataSet
@@ -31,17 +27,18 @@ def _parse_report_url(url, type_):
 class UamReportController(ReportController):
 
     @route()
+    def report_routes(self, reportname, docids=None, converter=None, **data):
+        # every /report/<converter>/... GET (and report_download, which calls this) hits the print lock
+        report = request.env['ir.actions.report']._get_report_from_name(reportname)
+        if report:
+            ids = [int(i) for i in docids.split(',') if i.isdigit()] if isinstance(docids, str) else docids or []
+            request.env['uam.access.lock']._check(report.model, 'print', [ids])
+        return super().report_routes(reportname, docids=docids, converter=converter, **data)
+
+    @route()
     def report_download(self, data, context=None, token=None, readonly=True):
         url, type_ = json.loads(data)[:2]
         report, ids = _parse_report_url(url, type_)
-        if report:
-            try:
-                request.env['uam.access.lock']._check(report.model, 'print', [ids])
-            except UserError as e:
-                # same error shape as web's report_download, so the client shows the message
-                error = {'code': 0, 'message': "Odoo Server Error", 'data': serialize_exception(e)}
-                res = request.make_response(html_escape(json.dumps(error)))
-                raise werkzeug.exceptions.InternalServerError(response=res) from e
         response = super().report_download(data, context=context, token=token, readonly=readonly)
         if report and ids and response.status_code == 200 and response.mimetype == 'application/pdf':
             try:

@@ -14,6 +14,11 @@ class UamAccessSimulation(models.TransientModel):
     module_id = fields.Many2one('ir.module.module', string='Module', domain=[('state', '=', 'installed')])
     report_html = fields.Html(compute='_compute_report_html', sanitize=False)
 
+    @api.depends('user_id')
+    def _compute_display_name(self):
+        for wiz in self:
+            wiz.display_name = self.env._('Simulation: %s', wiz.user_id.name or '')
+
     def _models(self):
         if self.model_id:
             return self.model_id

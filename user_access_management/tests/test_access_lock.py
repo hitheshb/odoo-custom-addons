@@ -5,6 +5,7 @@ from odoo import fields
 from odoo.exceptions import UserError, ValidationError
 from odoo.tests import HttpCase, TransactionCase, new_test_user, tagged
 from odoo.tests.common import JsonRpcException
+from odoo.tools import format_datetime
 
 
 @tagged('post_install', '-at_install')
@@ -37,6 +38,10 @@ class TestAccessLock(TransactionCase):
         self.assertEqual(key('create', [{}]), 'create')
         self.assertEqual(key('web_unlink', [[3]]), 'unlink')
         self.assertEqual(key('action_archive', [[3]]), 'action_archive')
+        self.assertEqual(key('copy', [[3]]), 'create')
+        self.assertEqual(key('name_create', ['x']), 'create')
+        self.assertEqual(key('load', [[], []]), 'create')
+        self.assertEqual(key('web_resequence', [[3]]), 'write')
 
     def test_locked_user_blocked(self):
         self._lock(['create'])
@@ -56,6 +61,23 @@ class TestAccessLock(TransactionCase):
         self.Lock.with_user(self.user)._check('res.partner', 'create', [{}])
         self.Lock._cron_archive_expired()
         self.assertFalse(lock.active)
+
+    def test_past_date_rejected_at_create(self):
+        with self.assertRaises(ValidationError):
+            self._lock(['create'], forever=False, date_until=fields.Datetime.now() - timedelta(minutes=1))
+
+    def test_message_uses_user_tz(self):
+        self.user.tz = 'Asia/Kolkata'
+        until = fields.Datetime.now() + timedelta(hours=2)
+        self._lock(['create'], forever=False, date_until=until)
+        with self.assertRaises(UserError) as cm:
+            self.Lock.with_user(self.user)._check('res.partner', 'create', [{}])
+        self.assertIn(format_datetime(self.env, until, tz='Asia/Kolkata'), str(cm.exception))
+        self.assertNotIn(fields.Datetime.to_string(until), str(cm.exception))
+
+    def test_display_name(self):
+        self.assertEqual(self._lock(['create']).display_name, f'{self.user.name} – {self.partner_model.name}')
+        self.assertEqual(self.Lock.new({}).display_name, 'New Lock')
 
     def test_needs_date_or_forever(self):
         with self.assertRaises(ValidationError):
@@ -124,3 +146,15 @@ class TestAccessLockHttp(HttpCase):
         self.assertNotIn('Content-Disposition', response.headers)
         self.assertIn('Locked by administrator', response.text)
         self.assertEqual(self.env['uam.print.log'].search_count([]), logs_before)
+
+    def test_report_get_blocked(self):
+        self._locked_user('print')
+        self.env['ir.actions.report'].create({
+            'name': 'UAM test report', 'model': 'res.partner', 'report_type': 'qweb-pdf',
+            'report_name': 'uam_test.report_partner',
+        })
+        partner = self.env['res.partner'].create({'name': 'UAM direct print'})
+        self.authenticate('uam_http_locked', 'uam_http_locked')
+        response = self.url_open(f'/report/pdf/uam_test.report_partner/{partner.id}')
+        self.assertNotEqual(response.headers.get('Content-Type'), 'application/pdf')
+        self.assertTrue('Locked by administrator' in response.text or 'UserError' in response.text, response.text[:300])

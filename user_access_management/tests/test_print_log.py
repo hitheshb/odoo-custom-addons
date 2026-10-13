@@ -50,3 +50,7 @@ class TestPrintLog(TransactionCase):
         with patch.object(type(self.Log), 'search_count', return_value=0), \
                 mute_logger('odoo.sql_db'), self.assertRaises(ConcurrencyError):
             self.Log._record(self.report, [13], b'%PDF')
+
+    def test_display_name(self):
+        log = self.Log._record(self.report, [1], b'%PDF')
+        self.assertEqual(log.display_name, f'{log.record_name} (Original)')

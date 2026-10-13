@@ -1,6 +1,7 @@
 from odoo import fields
 from odoo.exceptions import AccessError
 from odoo.tests import TransactionCase, tagged
+from odoo.tools import format_datetime
 
 
 @tagged('post_install', '-at_install')
@@ -34,3 +35,15 @@ class TestDashboard(TransactionCase):
             self.env['uam.dashboard'].with_user(demo).get_data()
         with self.assertRaises(AccessError):
             self.env['uam.dashboard'].with_user(demo).open_tile('online')
+
+    def test_times_in_user_tz(self):
+        admin = self.env.ref('base.user_admin')
+        admin.tz = 'Asia/Kolkata'
+        self.env['res.users'].with_user(admin).uam_track('res.partner', False, 'Contacts')
+        self.env.invalidate_all()
+        data = self.env['uam.dashboard'].with_user(admin).get_data()
+        row = next(u for u in data['usage'] if u['model'] == 'res.partner')
+        usage = self.env['uam.model.usage'].search([('user_id', '=', admin.id), ('model', '=', 'res.partner')],
+                                                   order='date desc', limit=1)
+        self.assertEqual(row['last_seen'], format_datetime(self.env, usage.last_seen, tz='Asia/Kolkata'))
+        self.assertNotEqual(row['last_seen'], fields.Datetime.to_string(usage.last_seen))

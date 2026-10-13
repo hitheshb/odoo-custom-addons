@@ -2,6 +2,7 @@ from datetime import timedelta
 
 from odoo import api, fields, models
 from odoo.exceptions import AccessError
+from odoo.tools import format_datetime
 
 
 class UamDashboard(models.AbstractModel):
@@ -43,13 +44,13 @@ class UamDashboard(models.AbstractModel):
         users = sorted(self._users(), key=lambda u: (order.get(u.im_status, 2), u.name))
         usage = self.env['uam.model.usage'].sudo().search([('date', '=', day)], order='view_count desc', limit=50)
         prints = self.env['uam.print.log'].sudo().search([], limit=10)
-        dt = fields.Datetime.to_string
+        dt = lambda v: format_datetime(self.env, v) if v else False  # noqa: E731  user tz
         return {
             'date': fields.Date.to_string(day),
             'tiles': tiles,
             'users': [{'id': u.id, 'name': u.name, 'status': u.im_status, 'page': u.uam_current_page or '',
-                       'last_seen': dt(u.uam_last_seen) if u.uam_last_seen else False,
-                       'login_date': dt(u.login_date) if u.login_date else False,
+                       'last_seen': dt(u.uam_last_seen),
+                       'login_date': dt(u.login_date),
                        'stale': u.uam_login_stale} for u in users],
             'usage': [{'user_id': r.user_id.id, 'user': r.user_id.name, 'model': r.model,
                        'model_name': r.model_name, 'views': r.view_count, 'last_seen': dt(r.last_seen)} for r in usage],

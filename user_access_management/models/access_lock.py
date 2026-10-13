@@ -2,6 +2,7 @@ from lxml import etree
 
 from odoo import api, fields, models
 from odoo.exceptions import UserError, ValidationError
+from odoo.tools import format_datetime
 
 FIXED_METHODS = [('create', 'Create'), ('write', 'Edit'), ('unlink', 'Delete'), ('print', 'Print')]
 
@@ -59,6 +60,20 @@ class UamAccessLock(models.Model):
             if not lock.forever and not lock.date_until:
                 raise ValidationError(self.env._("Set 'Locked Until' or tick 'Forever'."))
 
+    @api.depends('user_id', 'model_id')
+    def _compute_display_name(self):
+        for lock in self:
+            lock.display_name = (f'{lock.user_id.name} – {lock.model_id.name}'
+                                 if lock.user_id and lock.model_id else self.env._('New Lock'))
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        now = fields.Datetime.now()
+        for vals in vals_list:
+            if not vals.get('forever') and vals.get('date_until') and fields.Datetime.to_datetime(vals['date_until']) <= now:
+                raise ValidationError(self.env._("'Locked Until' must be in the future."))
+        return super().create(vals_list)
+
     @api.onchange('model_id')
     def _onchange_model_id(self):
         self.method_ids = False
@@ -67,6 +82,12 @@ class UamAccessLock(models.Model):
 
     @api.model
     def _method_key(self, method, args):
+        """Map an RPC method to a lock key. Child records saved through a parent form's
+        web_save are not checked against the child model."""
+        if method in ('copy', 'name_create', 'load'):
+            return 'create'
+        if method == 'web_resequence':
+            return 'write'
         if method in ('web_save', 'web_save_multi'):
             return 'write' if args and args[0] else 'create'
         if method == 'web_unlink':
@@ -82,7 +103,7 @@ class UamAccessLock(models.Model):
         ], limit=1)
         if lock:
             label = lock.method_ids.filtered(lambda m: m.name == key)[:1].label or key
-            until = self.env._('forever') if lock.forever else fields.Datetime.to_string(lock.date_until)
+            until = self.env._('forever') if lock.forever else format_datetime(self.env, lock.date_until)
             raise UserError(self.env._('Locked by administrator until %(until)s: %(label)s on %(model)s',
                                        until=until, label=label, model=lock.model_id.name))
 

@@ -59,3 +59,9 @@ class TestTracking(TransactionCase):
         self.Users.uam_track(False, '²', 'crafted')
         self.env.invalidate_all()
         self.assertEqual(self._usage().model, 'res.partner')
+
+    def test_usage_display_name(self):
+        self.Users.uam_track('res.partner', False, 'Contacts')
+        self.env.invalidate_all()
+        usage = self._usage()
+        self.assertEqual(usage.display_name, f'{self.user.name} – {usage.model_name} – {usage.date}')

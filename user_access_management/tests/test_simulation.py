@@ -64,3 +64,7 @@ class TestSimulation(TransactionCase):
             allowed_company_ids=[main.id, c2.id]).create({
                 'user_id': user.id, 'model_id': self.env['ir.model']._get('res.partner').id})
         self.assertTrue(wiz._rows())
+
+    def test_display_name(self):
+        wiz = self.env['uam.access.simulation'].create({'user_id': self.env.user.id})
+        self.assertEqual(wiz.display_name, f'Simulation: {self.env.user.name}')

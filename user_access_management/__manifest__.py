@@ -1,6 +1,6 @@
 {
     'name': 'User Access Management',
-    'version': '20.0.1.0.0',
+    'version': '20.0.1.1.0',
     'summary': 'See and edit what users, groups and access rights give, with a change log',
     'category': 'Administration',
     'depends': ['base', 'mail', 'rpc'],

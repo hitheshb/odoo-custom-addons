@@ -5,8 +5,8 @@ import { user } from "@web/core/user";
 const MIN_GAP_MS = 10 * 1000;
 
 registry.category("services").add("uam_page_tracker", {
-    dependencies: ["orm"],
-    start(env, { orm }) {
+    dependencies: ["orm", "title"],
+    start(env, { orm, title }) {
         if (!user.isInternalUser) {
             return;
         }
@@ -14,7 +14,8 @@ registry.category("services").add("uam_page_tracker", {
         let lastAt = 0;
         env.bus.addEventListener("ACTION_MANAGER:UI-UPDATED", () => {
             const { model, action, resId } = router.current;
-            const page = document.title.replace(/ - Odoo$/, "");
+            // document.title is set in a later useEffect; the title service is already up to date
+            const page = Object.values(title.getParts()).join(" - ") || "Odoo";
             const key = `${model}|${action}|${resId}|${page}`;
             if (key === lastKey && Date.now() - lastAt < MIN_GAP_MS) {
                 return;
