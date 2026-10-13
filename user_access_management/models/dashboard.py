@@ -1,11 +1,17 @@
 from datetime import timedelta
 
 from odoo import api, fields, models
+from odoo.exceptions import AccessError
 
 
 class UamDashboard(models.AbstractModel):
     _name = 'uam.dashboard'
     _description = 'User Access Dashboard'
+
+    def _check_admin(self):
+        # abstract model, no ACL row: the sudo() reads below must not leak to non-admins
+        if not (self.env.is_superuser() or self.env.user.has_group('base.group_system')):
+            raise AccessError(self.env._('Only administrators can open the dashboard.'))
 
     def _users(self):
         return self.env['res.users'].sudo().search([('share', '=', False)])
@@ -25,6 +31,7 @@ class UamDashboard(models.AbstractModel):
 
     @api.model
     def get_data(self, date=False):
+        self._check_admin()
         day = fields.Date.to_date(date) if date else fields.Date.context_today(self)
         labels = {'online': ('Online', 'fa-circle text-success'), 'away': ('Away', 'fa-circle text-warning'),
                   'stale': ('Stale logins', 'fa-exclamation-triangle text-danger'),
@@ -53,6 +60,7 @@ class UamDashboard(models.AbstractModel):
 
     @api.model
     def open_tile(self, key):
+        self._check_admin()
         model, domain = self._tile_domains()[key]
         return {'type': 'ir.actions.act_window', 'name': key.replace('_', ' ').title(), 'res_model': model,
                 'views': [(False, 'list'), (False, 'form')], 'domain': domain}

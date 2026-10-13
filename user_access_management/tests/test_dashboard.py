@@ -1,4 +1,5 @@
 from odoo import fields
+from odoo.exceptions import AccessError
 from odoo.tests import TransactionCase, tagged
 
 
@@ -26,3 +27,10 @@ class TestDashboard(TransactionCase):
         self.env['res.users']._uam_set_home_action()
         # action_id is an ir.actions.actions record, so compare ids
         self.assertEqual(admin.action_id.id, self.env.ref('user_access_management.uam_dashboard_action').id)
+
+    def test_non_admin_denied(self):
+        demo = self.env['res.users'].create({'name': 'Plain', 'login': 'plain_dash'})
+        with self.assertRaises(AccessError):
+            self.env['uam.dashboard'].with_user(demo).get_data()
+        with self.assertRaises(AccessError):
+            self.env['uam.dashboard'].with_user(demo).open_tile('online')
