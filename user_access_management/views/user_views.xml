@@ -63,8 +63,7 @@
                 <filter name="internal" string="Internal" domain="[('share', '=', False)]"/>
                 <filter name="portal" string="Portal / Public" domain="[('share', '=', True)]"/>
                 <separator/>
-                <filter name="stale" string="Stale Login (3+ days)"
-                        domain="['|', ('login_date', '=', False), ('login_date', '&lt;', (context_today() - relativedelta(days=3)).strftime('%Y-%m-%d'))]"/>
+                <filter name="stale" string="Stale Login" domain="[('uam_login_stale', '=', True)]"/>
                 <filter name="archived" string="Archived" domain="[('active', '=', False)]"/>
                 <filter name="active_only" string="Active Only" domain="[('active', '=', True)]"/>
             </search>

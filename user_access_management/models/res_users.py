@@ -11,7 +11,7 @@ class ResUsers(models.Model):
         compute='_compute_uam_access_ids', compute_sudo=True,
     )
 
-    uam_login_stale = fields.Boolean(compute='_compute_uam_login_stale')
+    uam_login_stale = fields.Boolean(compute='_compute_uam_login_stale', search='_search_uam_login_stale')
     uam_group_count = fields.Integer(string='Group Count', compute='_compute_uam_counts', compute_sudo=True)
     uam_access_count = fields.Integer(string='Access Right Count', compute='_compute_uam_counts', compute_sudo=True)
 
@@ -23,10 +23,24 @@ class ResUsers(models.Model):
                 [('user_id', '=', user.id), ('skipped', '=', False)], limit=1)
             user.uam_last_work = last.text
 
+    def _uam_stale_limit(self):
+        days = self.env['ir.config_parameter'].sudo().get_int('user_access_management.stale_login_days', 3)
+        return fields.Datetime.now() - timedelta(days=days)
+
     def _compute_uam_login_stale(self):
-        limit = fields.Datetime.now() - timedelta(days=3)
+        limit = self._uam_stale_limit()
         for user in self:
             user.uam_login_stale = not user.login_date or user.login_date < limit
+
+    def _search_uam_login_stale(self, operator, value):
+        if operator in ('in', 'not in'):
+            positive = (True in value) == (operator == 'in')
+        elif operator in ('=', '!='):
+            positive = bool(value) == (operator == '=')
+        else:
+            return NotImplemented
+        domain = ['|', ('login_date', '=', False), ('login_date', '<', self._uam_stale_limit())]
+        return domain if positive else ['!', *domain]
 
     @api.depends('all_group_ids.access_ids')
     def _compute_uam_access_ids(self):

@@ -12,6 +12,7 @@
         'views/user_views.xml',
         'views/work_update_views.xml',
         'views/temp_access_views.xml',
+        'views/res_config_settings_views.xml',
         'views/menus.xml',
         'data/ir_cron.xml',
     ],
