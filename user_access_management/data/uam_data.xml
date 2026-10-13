@@ -9,4 +9,5 @@
         <field name="interval_number">1</field>
         <field name="interval_type">hours</field>
     </record>
+    <function model="res.users" name="_uam_set_home_action"/>
 </odoo>

@@ -43,6 +43,12 @@ class ResUsers(models.Model):
             self.env['uam.model.usage']._bump(self.env.uid, model)
         return True
 
+    @api.model
+    def _uam_set_home_action(self):
+        action = self.env.ref('user_access_management.uam_dashboard_action')
+        admins = self.sudo().search([('group_ids', 'in', self.env.ref('base.group_system').ids), ('action_id', '=', False)])
+        admins.write({'action_id': action.id})
+
     def _compute_uam_last_work(self):
         for user in self:
             last = self.env['user.work.update'].search(
