@@ -26,19 +26,42 @@ class UamAccessSimulation(models.TransientModel):
     def _rows(self):
         self.ensure_one()
         user = self.user_id.sudo()
+        models_ = self._models()
         accesses = self.env['ir.access'].sudo().search([
-            ('active', '=', True), ('group_id', 'in', user.all_group_ids.ids), ('model_id', 'in', self._models().ids)])
+            ('active', '=', True), ('model_id', 'in', models_.ids),
+            '|', ('group_id', '=', False), ('group_id', 'in', user.all_group_ids.ids)])
         rows = []
-        for model in self._models():
+        for model in models_:
             if model.model not in self.env:
                 continue
-            as_user = self.env(user=user.id)[model.model]
+            # fresh context: the admin's allowed_company_ids may be invalid for the simulated user
+            as_user = self.env(user=user.id, context={'lang': self.env.lang})[model.model]
             row = {'model': model.model, 'name': model.name}
             for op, letter in OPS.items():
-                granting = accesses.filtered(lambda a: a.model_id == model and letter in a.operation)
-                row[op] = {'ok': as_user.has_access(op), 'groups': granting.group_id.mapped('full_name')}
+                covering = accesses.filtered(lambda a: a.model_id == model and letter in a.operation)
+                granting = covering.filtered('group_id')
+                restricting = covering - granting
+                row[op] = {
+                    'ok': as_user.has_access(op),
+                    'groups': granting.group_id.mapped('full_name'),
+                    'restrictions': restricting.mapped('name'),
+                    'partial': any(a.domain and a.domain.strip() != '[]' for a in covering),
+                }
             rows.append(row)
         return rows
+
+    @staticmethod
+    def _cell_glyph(cell):
+        return ('✓*' if cell['partial'] else '✓') if cell['ok'] else '✗'
+
+    @staticmethod
+    def _cell_title(cell):
+        parts = [', '.join(cell['groups']) or '-']
+        if cell['restrictions']:
+            parts.append('restricted by: ' + ', '.join(cell['restrictions']))
+        if cell['partial']:
+            parts.append('only some records')
+        return '; '.join(parts)
 
     @api.depends('user_id', 'model_id', 'module_id')
     def _compute_report_html(self):
@@ -51,8 +74,7 @@ class UamAccessSimulation(models.TransientModel):
             body = Markup('').join(
                 Markup('<tr><td>%s<br/><small class="text-muted">%s</small></td>%s</tr>') % (
                     r['name'], r['model'], Markup('').join(
-                        Markup('<td title="%s">%s</td>') % (', '.join(r[op]['groups']) or '-',
-                                                            '✓' if r[op]['ok'] else '✗')
+                        Markup('<td title="%s">%s</td>') % (wiz._cell_title(r[op]), wiz._cell_glyph(r[op]))
                         for op in ('create', 'read', 'write', 'unlink')))
                 for r in wiz._rows())
             wiz.report_html = Markup('<table class="table table-sm table-bordered"><thead>%s</thead>'
