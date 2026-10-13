@@ -1,8 +1,12 @@
 import json
+import logging
 
+from odoo.exceptions import ConcurrencyError
 from odoo.http import request, route
 
 from odoo.addons.web.controllers.report import ReportController
+
+_logger = logging.getLogger(__name__)
 
 
 def _parse_report_url(url, type_):
@@ -25,5 +29,11 @@ class UamReportController(ReportController):
         report, ids = _parse_report_url(url, type_)
         response = super().report_download(data, context=context, token=token, readonly=readonly)
         if report and ids and response.status_code == 200 and response.mimetype == 'application/pdf':
-            request.env['uam.print.log'].sudo()._record(report, ids, response.get_data())
+            try:
+                with request.env.cr.savepoint():
+                    request.env['uam.print.log'].sudo()._record(report, ids, response.get_data())
+            except ConcurrencyError:
+                raise
+            except Exception:
+                _logger.exception('Could not log print of report %s', report.report_name)
         return response

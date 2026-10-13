@@ -1,6 +1,9 @@
+import hashlib
+
 from psycopg2 import IntegrityError
 
 from odoo import api, fields, models
+from odoo.exceptions import ConcurrencyError
 
 
 class UamPrintLog(models.Model):
@@ -11,13 +14,14 @@ class UamPrintLog(models.Model):
     user_id = fields.Many2one('res.users', required=True, readonly=True, index=True, default=lambda self: self.env.uid)
     report_id = fields.Many2one('ir.actions.report', required=True, readonly=True, ondelete='cascade', index=True)
     model = fields.Char(readonly=True)
-    res_ids = fields.Char('Record IDs', required=True, readonly=True, index=True)
+    res_ids = fields.Text('Record IDs', required=True, readonly=True)
+    res_key = fields.Char(required=True, readonly=True, index=True)
     record_name = fields.Char('Document', readonly=True)
     copy_no = fields.Integer(readonly=True)
     label = fields.Char(compute='_compute_label')
     attachment_id = fields.Many2one('ir.attachment', readonly=True)
 
-    _uniq_copy = models.Constraint('UNIQUE(report_id, res_ids, copy_no)', 'This copy number already exists.')
+    _uniq_copy = models.Constraint('UNIQUE(report_id, res_key, copy_no)', 'This copy number already exists.')
 
     @api.depends('copy_no')
     def _compute_label(self):
@@ -26,21 +30,22 @@ class UamPrintLog(models.Model):
 
     @api.model
     def _record(self, report, res_ids, content):
-        key = ','.join(map(str, sorted(set(res_ids))))
-        records = self.env[report.model].browse(sorted(set(res_ids))).exists()
-        vals = {
-            'report_id': report.id, 'model': report.model, 'res_ids': key,
-            'record_name': ', '.join(records.mapped('display_name'))[:250],
-        }
-        for attempt in range(2):
-            vals['copy_no'] = self.search_count([('report_id', '=', report.id), ('res_ids', '=', key)])
-            try:
-                with self.env.cr.savepoint():
-                    log = self.create(vals)
-                break
-            except IntegrityError:
-                if attempt:
-                    raise
+        ids = sorted(set(res_ids))
+        key = ','.join(map(str, ids))
+        names = ', '.join(self.env[report.model].browse(ids[:20]).exists().mapped('display_name'))
+        if len(ids) > 20:
+            names += f' +{len(ids) - 20} more'
+        res_key = hashlib.sha1(key.encode()).hexdigest()
+        try:
+            with self.env.cr.savepoint():
+                log = self.create({
+                    'report_id': report.id, 'model': report.model, 'res_ids': key, 'res_key': res_key,
+                    'record_name': names[:250],
+                    'copy_no': self.search_count([('report_id', '=', report.id), ('res_key', '=', res_key)]),
+                })
+        except IntegrityError as e:
+            # REPEATABLE READ: retrying here would see the same snapshot; let the request retry instead
+            raise ConcurrencyError('Concurrent print of the same document') from e
         log.attachment_id = self.env['ir.attachment'].create({
             'name': f'{report.name} - {log.record_name or key} ({log.label}).pdf',
             'raw': content, 'mimetype': 'application/pdf',
