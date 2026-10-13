@@ -1,7 +1,9 @@
 from datetime import timedelta
 
+from markupsafe import Markup
+
 from odoo import api, fields, models
-from odoo.tools import SQL
+from odoo.tools import SQL, format_datetime
 
 
 class ResUsers(models.Model):
@@ -19,6 +21,13 @@ class ResUsers(models.Model):
     uam_last_work = fields.Char(compute='_compute_uam_last_work', compute_sudo=True)
     uam_current_page = fields.Char('Current Page', readonly=True)
     uam_last_seen = fields.Datetime('Last Seen', readonly=True)
+
+    uam_lock_count = fields.Integer(compute='_compute_uam_stats', compute_sudo=True)
+    uam_temp_count = fields.Integer(compute='_compute_uam_stats', compute_sudo=True)
+    uam_print_count = fields.Integer(compute='_compute_uam_stats', compute_sudo=True)
+    uam_usage_count = fields.Integer(compute='_compute_uam_stats', compute_sudo=True)
+    uam_change_count = fields.Integer(compute='_compute_uam_stats', compute_sudo=True)
+    uam_timeline_html = fields.Html(compute='_compute_uam_timeline_html', sanitize=False, compute_sudo=True)
 
     @api.model
     def uam_track(self, model, action, page):
@@ -109,6 +118,75 @@ class ResUsers(models.Model):
                       (self.env.ref('user_access_management.access_form_view').id, 'form')],
             'domain': [('id', 'in', self.uam_access_ids.ids)],
         }
+
+    def _uam_lock_domain(self):
+        return ['|', ('user_id', '=', self.id), ('group_id', 'in', self.all_group_ids.ids)]
+
+    def _compute_uam_stats(self):
+        for user in self:
+            user.uam_lock_count = self.env['uam.access.lock'].search_count(user._uam_lock_domain())
+            user.uam_temp_count = self.env['user.temp.access'].search_count([('user_id', '=', user.id)])
+            user.uam_print_count = self.env['uam.print.log'].search_count([('user_id', '=', user.id)])
+            user.uam_usage_count = self.env['uam.model.usage'].search_count([('user_id', '=', user.id)])
+            user.uam_change_count = self.env['access.change.log'].search_count(
+                [('target_kind', '=', 'user'), ('target_name', '=', user.name)])
+
+    def _uam_open(self, name, model, domain):
+        self.ensure_one()
+        return {'type': 'ir.actions.act_window', 'name': name, 'res_model': model,
+                'views': [(False, 'list'), (False, 'form')], 'domain': domain}
+
+    def action_uam_open_locks(self):
+        return self._uam_open(self.env._('Locks'), 'uam.access.lock', self._uam_lock_domain())
+
+    def action_uam_open_temp(self):
+        return self._uam_open(self.env._('Temporary Access'), 'user.temp.access', [('user_id', '=', self.id)])
+
+    def action_uam_open_prints(self):
+        return self._uam_open(self.env._('Prints'), 'uam.print.log', [('user_id', '=', self.id)])
+
+    def action_uam_open_usage(self):
+        return self._uam_open(self.env._('Model Usage'), 'uam.model.usage', [('user_id', '=', self.id)])
+
+    def action_uam_open_changes(self):
+        return self._uam_open(self.env._('Changes'), 'access.change.log',
+                              [('target_kind', '=', 'user'), ('target_name', '=', self.name)])
+
+    TIMELINE_LIMIT = 50
+
+    def _uam_timeline_events(self):
+        """(utc datetime, badge modifier, sentence) tuples, newest first."""
+        self.ensure_one()
+        ev = []
+        for c in self.env['access.change.log'].search(
+                [('target_kind', '=', 'user'), ('target_name', '=', self.name)], limit=self.TIMELINE_LIMIT):
+            what = c.new_value or c.old_value
+            ev.append((c.date, 'online' if c.action == 'add' else 'alert',
+                       self.env._('%(action)s %(label)s: %(what)s (by %(by)s)', action=c.action.capitalize(),
+                                  label=c.field_label or '', what=what or '', by=c.acting_user_id.name or '')))
+        for lock in self.env['uam.access.lock'].with_context(active_test=False).search(
+                self._uam_lock_domain(), limit=self.TIMELINE_LIMIT):
+            target = lock.user_id.name or lock.group_id.full_name
+            ev.append((lock.create_date, 'alert', self.env._('Locked %(methods)s on %(model)s (%(target)s)',
+                       methods=', '.join(lock.method_ids.mapped('label')), model=lock.model_id.name, target=target)))
+        for t in self.env['user.temp.access'].search([('user_id', '=', self.id)], limit=self.TIMELINE_LIMIT):
+            ev.append((t.date_from, 'away', self.env._('Temporary access %(groups)s until %(until)s (%(state)s)',
+                       groups=', '.join(t.group_ids.mapped('full_name')),
+                       until=format_datetime(self.env, t.date_to), state=t.state)))
+        for p in self.env['uam.print.log'].search([('user_id', '=', self.id)], limit=self.TIMELINE_LIMIT):
+            ev.append((p.create_date, 'accent', self.env._('Downloaded %(doc)s (%(label)s)',
+                       doc=p.record_name or p.res_ids[:50], label=p.label)))
+        return sorted((e for e in ev if e[0]), key=lambda e: e[0], reverse=True)[:self.TIMELINE_LIMIT]
+
+    def _compute_uam_timeline_html(self):
+        for user in self:
+            rows = Markup('').join(
+                Markup('<li class="d-flex gap-3 py-1"><span class="text-muted text-nowrap">%s</span>'
+                       '<span class="o_uam_badge o_uam_badge--%s">&#9679;</span><span>%s</span></li>')
+                % (format_datetime(self.env, when), kind, text)
+                for when, kind, text in user._uam_timeline_events())
+            user.uam_timeline_html = (Markup('<ul class="list-unstyled mb-0">%s</ul>') % rows if rows
+                                      else Markup('<p class="text-muted">Nothing has happened for this user yet.</p>'))
 
     def _uam_log_groups(self, old_ids, new_ids, user):
         groups = self.env['res.groups']

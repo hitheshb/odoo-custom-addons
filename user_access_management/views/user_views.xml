@@ -84,6 +84,21 @@
                         <button class="oe_stat_button" type="object" name="action_uam_open_access">
                             <field name="uam_access_count" widget="statinfo" string="Access Rights"/>
                         </button>
+                        <button class="oe_stat_button" type="object" name="action_uam_open_locks">
+                            <field name="uam_lock_count" widget="statinfo" string="Locks"/>
+                        </button>
+                        <button class="oe_stat_button" type="object" name="action_uam_open_temp">
+                            <field name="uam_temp_count" widget="statinfo" string="Temporary Access"/>
+                        </button>
+                        <button class="oe_stat_button" type="object" name="action_uam_open_prints">
+                            <field name="uam_print_count" widget="statinfo" string="Prints"/>
+                        </button>
+                        <button class="oe_stat_button" type="object" name="action_uam_open_usage">
+                            <field name="uam_usage_count" widget="statinfo" string="Screens Opened"/>
+                        </button>
+                        <button class="oe_stat_button" type="object" name="action_uam_open_changes">
+                            <field name="uam_change_count" widget="statinfo" string="Changes"/>
+                        </button>
                     </div>
                     <field name="avatar_128" widget="image" class="oe_avatar"/>
                     <field name="uam_login_stale" invisible="1"/>
@@ -103,6 +118,9 @@
                         </group>
                     </group>
                     <notebook>
+                        <page string="Timeline" name="timeline">
+                            <field name="uam_timeline_html" nolabel="1" readonly="1"/>
+                        </page>
                         <page string="Groups" name="groups">
                             <field name="group_ids" context="{'form_view_ref': 'user_access_management.group_form_view', 'list_view_ref': 'user_access_management.group_list_view'}"/>
                         </page>
