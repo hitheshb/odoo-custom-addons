@@ -2,3 +2,4 @@ id,name,model_id,group_id/id,operation,domain
 access_access_change_log_admin,access.change.log admin,access.change.log,base.group_system,r,
 access_user_work_update_admin,user.work.update admin,user.work.update,base.group_system,r,
 access_user_temp_access_admin,user.temp.access admin,user.temp.access,base.group_system,crud,
+access_uam_print_log_admin,uam.print.log admin,uam.print.log,base.group_system,r,

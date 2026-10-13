@@ -9,6 +9,7 @@
     <menuitem id="menu_uam_log" name="Change Log" parent="menu_uam_logs" action="access_change_log_action" sequence="10"/>
     <menuitem id="menu_uam_temp_access" name="Temporary Access" parent="menu_uam_privileges" action="temp_access_action" sequence="50"/>
     <menuitem id="menu_uam_work" name="Work Updates" parent="menu_uam_logs" action="work_update_action" sequence="20"/>
+    <menuitem id="menu_uam_print_log" name="Print Log" parent="menu_uam_logs" action="print_log_action" sequence="30"/>
     <menuitem id="menu_uam_config" name="Configuration" parent="menu_uam_root" sequence="90"/>
     <menuitem id="menu_uam_settings" name="Settings" parent="menu_uam_config" action="uam_settings_action" sequence="10"/>
 </odoo>
