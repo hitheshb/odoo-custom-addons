@@ -68,3 +68,23 @@ class TestSimulation(TransactionCase):
     def test_display_name(self):
         wiz = self.env['uam.access.simulation'].create({'user_id': self.env.user.id})
         self.assertEqual(wiz.display_name, f'Simulation: {self.env.user.name}')
+
+    def test_compare_marks_differences(self):
+        a = new_test_user(self.env, login='uam_cmp_a', groups='base.group_user')
+        b = new_test_user(self.env, login='uam_cmp_b', groups='base.group_user,base.group_partner_manager')
+        wiz = self.env['uam.access.simulation'].create({
+            'user_id': a.id, 'user2_id': b.id, 'model_id': self.env['ir.model']._get('res.partner').id})
+        row = wiz._rows()[0]
+        self.assertIn('other', row)
+        self.assertTrue(row['diff'])          # partner manager can create partners, plain user cannot
+        self.assertIn('o_uam_diff', wiz.report_html)
+        wiz.only_diff = True
+        self.assertIn('res.partner', wiz.report_html)
+
+    def test_only_diff_hides_same_rows(self):
+        a = new_test_user(self.env, login='uam_cmp_c', groups='base.group_user')
+        b = new_test_user(self.env, login='uam_cmp_d', groups='base.group_user')
+        wiz = self.env['uam.access.simulation'].create({
+            'user_id': a.id, 'user2_id': b.id, 'only_diff': True,
+            'model_id': self.env['ir.model']._get('res.partner').id})
+        self.assertNotIn('res.partner</small>', wiz.report_html)
