@@ -47,7 +47,7 @@ class TestPrintLog(TransactionCase):
 
     def test_race_raises_concurrency_error(self):
         self.Log._record(self.report, [13], b'%PDF')
-        with patch.object(type(self.Log), 'search_count', return_value=0), \
+        with patch.object(type(self.Log), 'search', return_value=self.Log.browse()), \
                 mute_logger('odoo.sql_db'), self.assertRaises(ConcurrencyError):
             self.Log._record(self.report, [13], b'%PDF')
 
@@ -70,6 +70,18 @@ class TestPrintLog(TransactionCase):
         self.assertFalse(old.exists())
         self.assertFalse(att.exists())
         self.assertTrue(new.exists())
+
+    def test_copy_no_survives_original_being_purged(self):
+        self.env['ir.config_parameter'].sudo().set_int('user_access_management.print_retention_days', 30)
+        original = self.Log._record(self.report, [10**9 + 5], b'%PDF')
+        copy1 = self.Log._record(self.report, [10**9 + 5], b'%PDF')
+        self._aged(original, 40)
+        self.Log._gc_old_prints()
+        self.assertFalse(original.exists())
+        self.assertTrue(copy1.exists())
+        again = self.Log._record(self.report, [10**9 + 5], b'%PDF')
+        self.assertEqual(again.copy_no, 2)
+        self.assertEqual(again.label, 'Copy-2')
 
     def test_retention_zero_keeps_all(self):
         self.env['ir.config_parameter'].sudo().set_int('user_access_management.print_retention_days', 0)

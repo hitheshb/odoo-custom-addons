@@ -20,6 +20,23 @@ class TestTempWarning(TransactionCase):
         self.assertTrue(4 < mine[0]['hours_left'] <= 5)
         self.assertEqual(len(TA.with_user(b).uam_my_expiring()), 1)
 
+    def test_my_expiring_skips_past_and_scheduled(self):
+        u = new_test_user(self.env, login='uam_tw_d')
+        group = self.env['res.groups'].create({'name': 'UAM TW3'})
+        TA = self.env['user.temp.access']
+        now = fields.Datetime.now()
+        past = TA.create({'user_id': u.id, 'group_ids': [(6, 0, group.ids)], 'date_to': now + timedelta(hours=2)})
+        self.env.cr.execute("UPDATE user_temp_access SET date_to = %s WHERE id = %s", (now - timedelta(minutes=5), past.id))
+        TA.create({'user_id': u.id, 'group_ids': [(6, 0, group.ids)],
+                   'date_from': now + timedelta(days=1), 'date_to': now + timedelta(days=2)})
+        self.env.invalidate_all()
+        self.assertEqual(past.state, 'active')
+        self.assertEqual(TA.with_user(u).uam_my_expiring(), [])
+        live = TA.create({'user_id': u.id, 'group_ids': [(6, 0, group.ids)], 'date_to': now + timedelta(hours=3)})
+        rows = TA.with_user(u).uam_my_expiring()
+        self.assertEqual([r['id'] for r in rows], [live.id])
+        self.assertTrue(rows[0]['until'])
+
     def test_time_left_pct(self):
         u = new_test_user(self.env, login='uam_tw_c')
         group = self.env['res.groups'].create({'name': 'UAM TW2'})

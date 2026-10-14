@@ -29,6 +29,16 @@ class TestUserPage(TransactionCase):
         for name in ('locks', 'temp', 'prints', 'usage', 'changes'):
             self.assertEqual(getattr(self.user, f'action_uam_open_{name}')()['type'], 'ir.actions.act_window')
 
+    def test_expired_temp_not_active(self):
+        other = new_test_user(self.env, login='uam_page_exp', groups='base.group_user')
+        t = self.env['user.temp.access'].create({'user_id': other.id, 'group_ids': [(6, 0, self.group.ids)],
+                                                 'date_to': fields.Datetime.now() + timedelta(days=1)})
+        self.assertEqual(other.uam_temp_active_count, 1)
+        t.action_cancel()
+        other.invalidate_recordset()
+        self.assertEqual(other.uam_temp_active_count, 0)
+        self.assertEqual(other.uam_temp_count, 1)
+
     def test_timeline_escapes(self):
         html = str(self.user.uam_timeline_html)
         self.assertIn('&lt;b&gt;x&lt;/b&gt;', html)

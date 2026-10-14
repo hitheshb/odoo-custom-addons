@@ -43,6 +43,7 @@
                 <field name="uam_current_page"/>
                 <field name="uam_lock_count"/>
                 <field name="uam_temp_count"/>
+                <field name="uam_temp_active_count"/>
                 <field name="uam_last_work"/>
                 <templates>
                     <t t-name="card" class="flex-row align-items-center gap-3">
@@ -58,7 +59,7 @@
                                 <span class="o_uam_badge"><field name="uam_access_count"/> rights</span>
                                 <span t-if="record.uam_lock_count.raw_value == 1" class="o_uam_badge o_uam_badge--alert"><field name="uam_lock_count"/> lock</span>
                                 <span t-elif="record.uam_lock_count.raw_value" class="o_uam_badge o_uam_badge--alert"><field name="uam_lock_count"/> locks</span>
-                                <span t-if="record.uam_temp_count.raw_value" class="o_uam_badge o_uam_badge--away"><field name="uam_temp_count"/> temporary</span>
+                                <span t-if="record.uam_temp_active_count.raw_value" class="o_uam_badge o_uam_badge--away"><field name="uam_temp_active_count"/> temporary</span>
                                 <span t-if="record.uam_login_stale.raw_value" class="o_uam_badge o_uam_badge--alert">Stale login</span>
                             </div>
                             <div class="text-muted small mt-1 text-truncate" t-if="record.uam_last_work.raw_value">

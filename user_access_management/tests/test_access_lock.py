@@ -127,6 +127,14 @@ class TestAccessLock(TransactionCase):
             self.Lock.create({'group_id': self.env.ref('base.group_system').id, 'model_id': users_model.id,
                               'forever': True, 'method_ids': [(6, 0, methods.filtered(lambda m: m.name == 'write').ids)]})
 
+    def test_no_admin_lockout_via_write(self):
+        users_model = self.env['ir.model']._get('res.users')
+        methods = self.env['uam.lock.method']._sync_for_model('res.users')
+        lock = self.Lock.create({'user_id': self.user.id, 'model_id': users_model.id, 'forever': True,
+                                 'method_ids': [(6, 0, methods.filtered(lambda m: m.name == 'write').ids)]})
+        with self.assertRaises(ValidationError):
+            lock.write({'group_id': self.env.ref('base.group_system').id, 'user_id': False})
+
     def test_state_unlock_extend(self):
         lock = self._lock(['create'], forever=False, date_until=fields.Datetime.now() + timedelta(hours=1))
         self.assertEqual(lock.lock_state, 'active')

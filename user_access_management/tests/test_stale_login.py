@@ -63,6 +63,15 @@ class TestStaleLogin(TransactionCase):
         self.assertTrue(admin.active)
         self.assertIn('Archived 1', res['params']['message'])
 
+    def test_archived_stale_user_skipped(self):
+        stale = self._stale_user('uam_stale_d')
+        gone = self._stale_user('uam_stale_e')
+        gone.active = False
+        res = (stale | gone).action_uam_remind_stale()
+        self.assertIn('Sent 1', res['params']['message'])
+        res = (stale | gone).action_uam_archive_stale()
+        self.assertIn('Archived 1', res['params']['message'])
+
     def test_remind_sends_mail_only_to_stale(self):
         stale = self._stale_user('uam_stale_b')
         fresh = new_test_user(self.env, login='uam_fresh_b', email='uam_fresh_b@example.com')

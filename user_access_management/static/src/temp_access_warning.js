@@ -12,20 +12,24 @@ registry.category("services").add("uam_temp_access_warning", {
         // access id -> stages already shown ("normal", "last_hour"): each shown once per session
         const shown = new Map();
         const check = async () => {
-            const rows = await orm.silent.call("user.temp.access", "uam_my_expiring", []);
-            for (const r of rows) {
-                const stage = r.hours_left < 1 ? "last_hour" : "normal";
-                const stages = shown.get(r.id) || new Set();
-                if (stages.has(stage)) {
-                    continue;
+            try {
+                const rows = await orm.silent.call("user.temp.access", "uam_my_expiring", []);
+                for (const r of rows) {
+                    const stage = r.hours_left < 1 ? "last_hour" : "normal";
+                    const stages = shown.get(r.id) || new Set();
+                    if (stages.has(stage)) {
+                        continue;
+                    }
+                    stages.add(stage);
+                    shown.set(r.id, stages);
+                    notification.add(`Your extra access (${r.groups}) ends ${r.until}.`, {
+                        title: "Temporary access",
+                        type: r.hours_left < 24 ? "warning" : "info",
+                        sticky: true,
+                    });
                 }
-                stages.add(stage);
-                shown.set(r.id, stages);
-                notification.add(`Your extra access (${r.groups}) ends ${r.until}.`, {
-                    title: "Temporary access",
-                    type: r.hours_left < 24 ? "warning" : "info",
-                    sticky: true,
-                });
+            } catch {
+                // best-effort reminder: stay silent on network/server errors
             }
         };
         check();

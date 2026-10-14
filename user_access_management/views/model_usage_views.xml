@@ -59,7 +59,7 @@
         <field name="view_mode">list,graph,pivot</field>
         <field name="context">{'search_default_date_filter': 1}</field>
         <field name="help" type="html">
-            <p class="o_view_nocontent_smiling_face">No activity on this day</p>
+            <p class="o_view_nocontent_smiling_face">No screens were opened in this period</p>
             <p>Each time someone opens a screen it is counted here, per user, model and day.</p>
         </field>
     </record>

@@ -42,12 +42,14 @@ class UamPrintLog(models.Model):
         if len(ids) > 20:
             names += f' +{len(ids) - 20} more'
         res_key = hashlib.sha1(key.encode()).hexdigest()
+        # max+1, not count: retention may have purged the Original but kept later copies
+        last = self.search([('report_id', '=', report.id), ('res_key', '=', res_key)], order='copy_no desc', limit=1)
         try:
             with self.env.cr.savepoint():
                 log = self.create({
                     'report_id': report.id, 'model': report.model, 'res_ids': key, 'res_key': res_key,
                     'record_name': names[:250],
-                    'copy_no': self.search_count([('report_id', '=', report.id), ('res_key', '=', res_key)]),
+                    'copy_no': last.copy_no + 1 if last else 0,
                 })
         except IntegrityError as e:
             # REPEATABLE READ: retrying here would see the same snapshot; let the request retry instead

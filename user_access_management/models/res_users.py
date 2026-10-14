@@ -25,6 +25,7 @@ class ResUsers(models.Model):
 
     uam_lock_count = fields.Integer(compute='_compute_uam_stats', compute_sudo=True, groups='base.group_system')
     uam_temp_count = fields.Integer(compute='_compute_uam_stats', compute_sudo=True, groups='base.group_system')
+    uam_temp_active_count = fields.Integer(compute='_compute_uam_stats', compute_sudo=True, groups='base.group_system')
     uam_print_count = fields.Integer(compute='_compute_uam_stats', compute_sudo=True, groups='base.group_system')
     uam_usage_count = fields.Integer(compute='_compute_uam_stats', compute_sudo=True, groups='base.group_system')
     uam_change_count = fields.Integer(compute='_compute_uam_stats', compute_sudo=True, groups='base.group_system')
@@ -106,7 +107,7 @@ class ResUsers(models.Model):
 
     def _uam_stale_targets(self):
         admins = self.env.ref('base.group_system').all_user_ids
-        return self.filtered(lambda u: u.uam_login_stale and u != self.env.user and u not in admins)
+        return self.filtered(lambda u: u.active and u.uam_login_stale and u != self.env.user and u not in admins)
 
     def action_uam_archive_stale(self):
         self._uam_check_admin()
@@ -159,6 +160,7 @@ class ResUsers(models.Model):
         for user in self:
             user.uam_lock_count = self.env['uam.access.lock'].search_count(user._uam_lock_domain())
             user.uam_temp_count = self.env['user.temp.access'].search_count([('user_id', '=', user.id)])
+            user.uam_temp_active_count = self.env['user.temp.access'].search_count([('user_id', '=', user.id), ('state', '=', 'active')])
             user.uam_print_count = self.env['uam.print.log'].search_count([('user_id', '=', user.id)])
             user.uam_usage_count = self.env['uam.model.usage'].search_count([('user_id', '=', user.id)])
             user.uam_change_count = self.env['access.change.log'].search_count(user._uam_change_domain())
