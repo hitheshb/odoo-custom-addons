@@ -7,7 +7,7 @@
             <list create="false" edit="false" delete="false">
                 <field name="date"/>
                 <field name="acting_user_id" widget="many2one_avatar_user"/>
-                <field name="action" widget="badge" decoration-success="action in ('create', 'add')" decoration-warning="action == 'edit'" decoration-danger="action in ('delete', 'remove')"/>
+                <field name="action" widget="badge" decoration-success="action in ('create', 'add')" decoration-info="action == 'edit'" decoration-danger="action in ('delete', 'remove')"/>
                 <field name="target_kind" widget="badge" width="120px"/>
                 <field name="target_name" class="fw-bold"/>
                 <field name="field_label" optional="show"/>
@@ -60,6 +60,7 @@
         <field name="name">Change Log</field>
         <field name="res_model">access.change.log</field>
         <field name="view_mode">list,graph</field>
+        <field name="context">{'search_default_group_date': 1}</field>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">Nothing has changed yet</p>
             <p>Every change to users, groups and access rights is recorded here.</p>

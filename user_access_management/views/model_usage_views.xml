@@ -8,7 +8,7 @@
                 <field name="date"/>
                 <field name="user_id" widget="many2one_avatar_user"/>
                 <field name="model_name"/>
-                <field name="view_count" sum="Total"/>
+                <field name="view_count" sum="Total" decoration-bf="view_count >= 10" decoration-info="view_count >= 10"/>
                 <field name="first_seen"/>
                 <field name="last_seen"/>
             </list>
@@ -31,10 +31,32 @@
             </search>
         </field>
     </record>
+    <record id="model_usage_view_graph" model="ir.ui.view">
+        <field name="name">uam.model.usage.graph</field>
+        <field name="model">uam.model.usage</field>
+        <field name="arch" type="xml">
+            <graph string="Screens opened" type="bar" stacked="1">
+                <field name="date" interval="day"/>
+                <field name="user_id"/>
+                <field name="view_count" type="measure"/>
+            </graph>
+        </field>
+    </record>
+    <record id="model_usage_view_pivot" model="ir.ui.view">
+        <field name="name">uam.model.usage.pivot</field>
+        <field name="model">uam.model.usage</field>
+        <field name="arch" type="xml">
+            <pivot string="Screens opened">
+                <field name="user_id" type="row"/>
+                <field name="date" interval="day" type="col"/>
+                <field name="view_count" type="measure"/>
+            </pivot>
+        </field>
+    </record>
     <record id="model_usage_action" model="ir.actions.act_window">
         <field name="name">Model Usage</field>
         <field name="res_model">uam.model.usage</field>
-        <field name="view_mode">list</field>
+        <field name="view_mode">list,graph,pivot</field>
         <field name="context">{'search_default_today': 1}</field>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">No activity on this day</p>

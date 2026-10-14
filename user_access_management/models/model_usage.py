@@ -8,7 +8,7 @@ class UamModelUsage(models.Model):
     _order = 'date desc, last_seen desc'
 
     user_id = fields.Many2one('res.users', required=True, readonly=True, ondelete='cascade', index=True)
-    model = fields.Char(required=True, readonly=True)
+    model = fields.Char('Technical Model', required=True, readonly=True)
     model_name = fields.Char('Model', compute='_compute_model_name')
     date = fields.Date(required=True, readonly=True, index=True)
     view_count = fields.Integer('Views', readonly=True)

@@ -39,24 +39,29 @@
                 </header>
                 <field name="active"/>
                 <field name="uam_login_stale"/>
+                <field name="im_status"/>
+                <field name="uam_current_page"/>
+                <field name="uam_lock_count"/>
+                <field name="uam_temp_count"/>
+                <field name="uam_last_work"/>
                 <templates>
-                    <t t-name="card" class="flex-row">
-                        <aside t-attf-class="w-25 pe-2 #{record.active.raw_value ? '' : 'opacity-50'}">
-                            <field name="avatar_128" widget="image" alt="Avatar" options="{'img_class': 'rounded-3'}"/>
+                    <t t-name="card" class="flex-row align-items-center gap-3">
+                        <aside t-attf-class="o_uam_ring o_uam_ring--#{record.im_status.raw_value} #{record.active.raw_value ? '' : 'opacity-50'}" style="width: 64px; height: 64px;">
+                            <field name="avatar_128" widget="image" alt="Avatar" options="{'img_class': 'rounded-circle w-100 h-100 object-fit-cover'}"/>
                         </aside>
-                        <main t-attf-class="w-75 #{record.active.raw_value ? '' : 'opacity-50'}">
-                            <div class="d-flex justify-content-between align-items-start">
-                                <field class="fw-bold fs-5 text-truncate" name="name"/>
-                                <field name="im_status" widget="uam_status_dot"/>
-                            </div>
-                            <div class="text-muted text-truncate"><span class="oi me-1" data-icon="mail"/><field name="login"/></div>
+                        <main t-attf-class="flex-grow-1 min-w-0 #{record.active.raw_value ? '' : 'opacity-50'}">
+                            <field class="fw-bold fs-5 text-truncate d-block" name="name"/>
+                            <div class="text-truncate small" style="color: var(--uam-accent)" t-if="record.uam_current_page.raw_value"><field name="uam_current_page"/></div>
+                            <div class="text-muted text-truncate small"><span class="oi me-1" data-icon="mail" title="Email"/><field name="login"/></div>
                             <div class="d-flex flex-wrap gap-1 mt-2">
-                                <span class="badge text-bg-info"><span class="oi me-1" data-icon="group"/><field name="uam_group_count"/> groups</span>
-                                <span class="badge text-bg-secondary"><span class="oi me-1" data-icon="key"/><field name="uam_access_count"/> rights</span>
-                                <span t-if="record.uam_login_stale.raw_value" class="badge text-bg-danger">Stale login</span>
+                                <span class="o_uam_badge o_uam_badge--accent"><field name="uam_group_count"/> groups</span>
+                                <span class="o_uam_badge"><field name="uam_access_count"/> rights</span>
+                                <span t-if="record.uam_lock_count.raw_value" class="o_uam_badge o_uam_badge--alert"><field name="uam_lock_count"/> locks</span>
+                                <span t-if="record.uam_temp_count.raw_value" class="o_uam_badge o_uam_badge--away"><field name="uam_temp_count"/> temporary</span>
+                                <span t-if="record.uam_login_stale.raw_value" class="o_uam_badge o_uam_badge--alert">Stale login</span>
                             </div>
                             <div class="text-muted small mt-1 text-truncate" t-if="record.uam_last_work.raw_value">
-                                <span class="oi me-1" data-icon="edit"/><field name="uam_last_work"/>
+                                <span class="oi me-1" data-icon="edit" title="Last work update"/><field name="uam_last_work"/>
                             </div>
                         </main>
                     </t>
@@ -116,7 +121,7 @@
                     <field name="uam_login_stale" invisible="1"/>
                     <div class="oe_title">
                         <h1><field name="name" readonly="1" placeholder="Name"/></h1>
-                        <h3 class="text-muted"><span class="oi me-2" data-icon="mail"/><field name="login" readonly="1"/></h3>
+                        <h3 class="text-muted"><span class="oi me-2" data-icon="mail" title="Email"/><field name="login" readonly="1"/></h3>
                     </div>
                     <group>
                         <group>

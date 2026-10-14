@@ -20,6 +20,17 @@ class UserTempAccess(models.Model):
         [('scheduled', 'Scheduled'), ('active', 'Active'), ('expired', 'Expired'), ('cancelled', 'Cancelled')],
         default='scheduled', readonly=True, index=True)
     note = fields.Char()
+    uam_time_left_pct = fields.Integer('Time left', compute='_compute_uam_time_left')
+    uam_ending_soon = fields.Boolean(compute='_compute_uam_time_left')
+
+    @api.depends('date_from', 'date_to', 'state')
+    def _compute_uam_time_left(self):
+        now = fields.Datetime.now()
+        for t in self:
+            total = (t.date_to - t.date_from).total_seconds() if t.date_to and t.date_from else 0
+            left = (t.date_to - now).total_seconds() if t.date_to else 0
+            t.uam_time_left_pct = int(max(0, min(100, left * 100 / total))) if total > 0 and t.state == 'active' else 0
+            t.uam_ending_soon = t.state == 'active' and 0 < left < 86400
 
     @api.constrains('date_from', 'date_to')
     def _check_dates(self):

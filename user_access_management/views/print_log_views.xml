@@ -30,6 +30,7 @@
                 <group>
                     <filter name="by_user" string="User" context="{'group_by': 'user_id'}"/>
                     <filter name="by_report" string="Report" context="{'group_by': 'report_id'}"/>
+                    <filter name="by_document" string="Document" context="{'group_by': 'record_name'}"/>
                 </group>
             </search>
         </field>

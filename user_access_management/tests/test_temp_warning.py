@@ -19,3 +19,12 @@ class TestTempWarning(TransactionCase):
         self.assertIn('UAM TW', mine[0]['groups'])
         self.assertTrue(4 < mine[0]['hours_left'] <= 5)
         self.assertEqual(len(TA.with_user(b).uam_my_expiring()), 1)
+
+    def test_time_left_pct(self):
+        u = new_test_user(self.env, login='uam_tw_c')
+        group = self.env['res.groups'].create({'name': 'UAM TW2'})
+        now = fields.Datetime.now()
+        t = self.env['user.temp.access'].create({'user_id': u.id, 'group_ids': [(6, 0, group.ids)],
+                                                'date_from': now - timedelta(hours=5), 'date_to': now + timedelta(hours=5)})
+        self.assertTrue(45 <= t.uam_time_left_pct <= 55)
+        self.assertTrue(t.uam_ending_soon)
