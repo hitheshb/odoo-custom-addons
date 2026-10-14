@@ -5,3 +5,4 @@ from . import test_tracking
 from . import test_simulation
 from . import test_dashboard
 from . import test_user_page
+from . import test_temp_warning

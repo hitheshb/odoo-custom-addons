@@ -1,5 +1,6 @@
 from odoo import Command, api, fields, models
 from odoo.exceptions import ValidationError
+from odoo.tools import format_datetime
 
 
 class UserTempAccess(models.Model):
@@ -67,3 +68,12 @@ class UserTempAccess(models.Model):
             to_remove = rec.granted_group_ids - others.group_ids
             rec.user_id.sudo().write({'group_ids': [Command.unlink(g) for g in to_remove.ids]})
             rec.write({'granted_group_ids': [Command.clear()], 'state': state})
+
+    @api.model
+    def uam_my_expiring(self):
+        """Caller's own active temporary access (called by every internal user, so never other users' rows)."""
+        now = fields.Datetime.now()
+        rows = self.sudo().search([('user_id', '=', self.env.uid), ('state', '=', 'active')], order='date_to')
+        return [{'id': r.id, 'groups': ', '.join(r.group_ids.mapped('full_name')),
+                 'until': format_datetime(self.env, r.date_to),
+                 'hours_left': (r.date_to - now).total_seconds() / 3600} for r in rows]
