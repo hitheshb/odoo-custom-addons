@@ -87,7 +87,6 @@
         <field name="name">Access Lock</field>
         <field name="res_model">uam.access.lock</field>
         <field name="view_mode">kanban,list,form</field>
-        <field name="context">{'search_default_by_user': 1}</field>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">No locks yet</p>
             <p>Block a user or a whole group from creating, editing, deleting, printing or pressing a button on a model, until a date or forever.</p>

@@ -26,9 +26,12 @@
 .o_uam_cell--no { color: var(--uam-alert); font-weight: 700; }
 tr.o_uam_diff > td:first-child { box-shadow: inset 3px 0 0 var(--uam-away); }
 
-.o_uam_ring {
+// .o_kanban_record prefix: Odoo's kanban aside rules otherwise reset the border.
+.o_uam_ring, .o_kanban_record .o_uam_ring {
     --ring: var(--bs-secondary-color);
     border-radius: 50%; padding: 2px; border: 3px solid var(--ring);
-    &--online { --ring: var(--uam-online); }
-    &--away { --ring: var(--uam-away); }
+    &.o_uam_ring--online { --ring: var(--uam-online); }
+    &.o_uam_ring--away { --ring: var(--uam-away); }
 }
+
+.o_uam_tags_clip { max-height: 26px; overflow: hidden; }

@@ -23,7 +23,7 @@
                 <templates>
                     <t t-name="card">
                         <field name="user_id" widget="many2one_avatar_user" class="fw-bold"/>
-                        <field name="group_ids" widget="many2many_tags" options="{'color_field': 'uam_color'}"/>
+                        <field name="group_ids" class="o_uam_tags_clip" widget="many2many_tags" options="{'color_field': 'uam_color'}"/>
                         <div class="small text-muted mt-1">Until <field name="date_to"/></div>
                         <div t-if="record.state.raw_value == 'active'" t-attf-class="#{record.uam_ending_soon.raw_value ? 'text-warning' : ''}">
                             <field name="uam_time_left_pct" widget="progressbar"/>

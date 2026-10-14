@@ -56,7 +56,8 @@
                             <div class="d-flex flex-wrap gap-1 mt-2">
                                 <span class="o_uam_badge o_uam_badge--accent"><field name="uam_group_count"/> groups</span>
                                 <span class="o_uam_badge"><field name="uam_access_count"/> rights</span>
-                                <span t-if="record.uam_lock_count.raw_value" class="o_uam_badge o_uam_badge--alert"><field name="uam_lock_count"/> locks</span>
+                                <span t-if="record.uam_lock_count.raw_value == 1" class="o_uam_badge o_uam_badge--alert"><field name="uam_lock_count"/> lock</span>
+                                <span t-elif="record.uam_lock_count.raw_value" class="o_uam_badge o_uam_badge--alert"><field name="uam_lock_count"/> locks</span>
                                 <span t-if="record.uam_temp_count.raw_value" class="o_uam_badge o_uam_badge--away"><field name="uam_temp_count"/> temporary</span>
                                 <span t-if="record.uam_login_stale.raw_value" class="o_uam_badge o_uam_badge--alert">Stale login</span>
                             </div>
