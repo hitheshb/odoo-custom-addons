@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="chatbot.Panel">
+        <div t-if="this.visible" class="o_chatbot_root">
+
+            <!-- The bubble -->
+            <button t-if="!this.state.open"
+                    class="o_chatbot_bubble"
+                    title="Ask the assistant"
+                    aria-label="Ask the assistant"
+                    t-on-click="this.toggle">
+                <span class="oi" data-icon="forum"/>
+            </button>
+            <!-- The panel -->
+            <section t-else=""
+                     class="o_chatbot_panel"
+                     role="dialog"
+                     aria-label="Assistant"
+                     t-on-click="this.closePicker">
+                <header class="o_chatbot_head">
+                    <div class="o_chatbot_head__title">
+                        <span class="oi" data-icon="forum"/>
+                        <span>Assistant</span>
+                    </div>
+                    <div class="o_chatbot_head__meta">
+                        <div class="o_chatbot_picker" t-on-click.stop="this.swallow">
+                            <button t-if="this.shownModel"
+                                    class="o_chatbot_model"
+                                    title="Switch model"
+                                    aria-label="Switch model"
+                                    t-on-click="this.togglePicker">
+                                <span class="o_chatbot_model__name" t-out="this.shownModel"/>
+                                <span class="oi" data-icon="arrow_drop_down"/>
+                            </button>
+                            <div t-if="this.state.picker" class="o_chatbot_menu">
+                                <input t-if="this.lotsOfModels"
+                                       class="o_chatbot_menu__filter"
+                                       type="text"
+                                       placeholder="Filter models..."
+                                       t-model.proxy="this.state.filter"/>
+                                <div class="o_chatbot_menu__list">
+                                    <p t-if="this.state.pickerLoading" class="o_chatbot_menu__note">
+                                        Loading models...
+                                    </p>
+                                    <p t-elif="this.state.pickerError" class="o_chatbot_menu__note"
+                                       t-out="this.state.pickerError"/>
+                                    <t t-else="">
+                                        <t t-foreach="this.menuGroups" t-as="group" t-key="group.key">
+                                            <div class="o_chatbot_menu__group">
+                                                <span t-out="group.label"/>
+                                                <span t-if="group.error"
+                                                      class="o_chatbot_menu__warn"
+                                                      t-out="group.error"/>
+                                            </div>
+                                            <button t-foreach="group.models" t-as="name"
+                                                    t-key="group.key + ':' + name"
+                                                    t-attf-class="o_chatbot_menu__item {{ this.isCurrent(group.key, name) ? 'is-current' : '' }}"
+                                                    t-on-click="() => this.pickModel(group.key, name)">
+                                                <span class="o_chatbot_menu__name" t-out="name"/>
+                                                <span t-if="this.isCurrent(group.key, name)"
+                                                      class="oi" data-icon="check"/>
+                                            </button>
+                                        </t>
+                                        <p t-if="!this.menuGroups.length" class="o_chatbot_menu__note">
+                                            No models to show.
+                                        </p>
+                                    </t>
+                                </div>
+                                <button class="o_chatbot_menu__refresh" t-on-click="this.loadModels">
+                                    Refresh
+                                </button>
+                            </div>
+                        </div>
+                        <button class="o_chatbot_icon" title="Start over" aria-label="Start over"
+                                t-on-click="this.clear">
+                            <span class="oi" data-icon="delete"/>
+                        </button>
+                        <button class="o_chatbot_icon" title="Close" aria-label="Close"
+                                t-on-click="this.toggle">
+                            <span class="oi" data-icon="close"/>
+                        </button>
+                    </div>
+                </header>
+
+                <div class="o_chatbot_body">
+                    <t t-foreach="this.state.turns" t-as="turn" t-key="turn_index">
+
+                        <!-- what the user said -->
+                        <div t-if="turn.kind === 'user'" class="o_chatbot_say o_chatbot_say--me">
+                            <p t-out="turn.text"/>
+                        </div>
+
+                        <!-- what the assistant said -->
+                        <div t-if="turn.kind === 'bot'" class="o_chatbot_say o_chatbot_say--bot">
+                            <p t-if="turn.text" t-out="turn.text"/>
+                            <span t-if="turn.streaming" class="o_chatbot_dots">
+                                <i/><i/><i/>
+                            </span>
+                        </div>
+
+                        <!-- a tool that ran, and the records it touched -->
+                        <div t-if="turn.kind === 'tool'"
+                             t-attf-class="o_chatbot_tool o_chatbot_tool--{{ turn.state }}">
+                            <div class="o_chatbot_tool__head">
+                                <span class="oi" t-att-data-icon="turn.state === 'error' ? 'cancel' : (turn.name === 'search_records' or turn.name === 'count_records' or turn.name === 'describe_model' or turn.name === 'find_models' ? 'database' : 'edit')"/>
+                                <span class="o_chatbot_tool__label" t-out="turn.label"/>
+                                <span class="o_chatbot_tool__summary" t-out="turn.summary"/>
+                            </div>
+                            <p t-if="turn.error" class="o_chatbot_tool__error" t-out="turn.error"/>
+                            <div t-if="turn.records and turn.records.length" class="o_chatbot_records">
+                                <button t-foreach="turn.records" t-as="record" t-key="record.id"
+                                        class="o_chatbot_record"
+                                        t-att-title="'Open ' + (record.name or '')"
+                                        t-on-click="() => this.openRecord(turn.model, record.id)">
+                                    <span class="oi" data-icon="arrow_forward"/>
+                                    <span t-out="record.name"/>
+                                </button>
+                                <span t-if="turn.count > turn.records.length"
+                                      class="o_chatbot_records__more"
+                                      t-out="'and ' + (turn.count - turn.records.length) + ' more'"/>
+                            </div>
+                        </div>
+
+                        <!-- the first provider would not answer -->
+                        <div t-if="turn.kind === 'note'" class="o_chatbot_note"
+                             t-att-title="turn.detail">
+                            <span class="oi" data-icon="info"/>
+                            <span t-out="turn.text"/>
+                        </div>
+
+                        <!-- a destructive call, waiting for the user -->
+                        <div t-if="turn.kind === 'confirm'" class="o_chatbot_confirm">
+                            <div class="o_chatbot_confirm__head">
+                                <span class="oi" data-icon="warning"/>
+                                <span t-out="turn.summary"/>
+                            </div>
+                            <ul t-if="turn.records.length" class="o_chatbot_confirm__records">
+                                <li t-foreach="turn.records" t-as="record" t-key="record.id">
+                                    <span t-out="record.name"/>
+                                </li>
+                            </ul>
+                            <div t-if="!turn.verdict" class="o_chatbot_confirm__buttons">
+                                <button class="btn btn-primary btn-sm" t-on-click="this.approve">Go ahead</button>
+                                <button class="btn btn-secondary btn-sm" t-on-click="this.refuse">No</button>
+                            </div>
+                            <p t-else="" class="o_chatbot_confirm__verdict"
+                               t-out="turn.verdict === 'allowed' ? 'You allowed it.' : 'You refused it.'"/>
+                        </div>
+                    </t>
+
+                    <p t-if="this.state.error" class="o_chatbot_error" t-out="this.state.error"/>
+                    <div t-ref="this.bottomRef"/>
+                </div>
+
+                <footer class="o_chatbot_foot">
+                    <textarea class="o_chatbot_input"
+                              rows="1"
+                              t-att-disabled="this.state.busy"
+                              t-att-placeholder="this.state.busy ? 'Working...' : 'Ask about this database...'"
+                              t-model.proxy="this.state.draft"
+                              t-on-keydown="this.onKeydown"/>
+                    <button class="o_chatbot_send"
+                            title="Send"
+                            aria-label="Send"
+                            t-att-disabled="this.state.busy or !this.state.draft.trim()"
+                            t-on-click="this.send">
+                        <span class="oi" data-icon="send"/>
+                    </button>
+                </footer>
+            </section>
+        </div>
+    </t>
+</templates>

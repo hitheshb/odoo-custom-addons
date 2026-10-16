@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem id="menu_chatbot_root" name="Chatbot" sequence="95"
+              groups="base.group_system" action="chatbot_message_action"/>
+    <menuitem id="menu_chatbot_conversations" name="Conversations"
+              parent="menu_chatbot_root" action="chatbot_message_action" sequence="10"/>
+    <menuitem id="menu_chatbot_settings" name="Settings"
+              parent="menu_chatbot_root" action="chatbot_settings_action" sequence="90"/>
+</odoo>

@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="res_config_settings_view_form_chatbot" model="ir.ui.view">
+        <field name="name">res.config.settings.view.form.inherit.chatbot</field>
+        <field name="model">res.config.settings</field>
+        <field name="priority" eval="45"/>
+        <field name="inherit_id" ref="base.res_config_settings_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//form" position="inside">
+                <app data-string="Chatbot" string="Chatbot" name="chatbot" groups="base.group_system">
+                    <block title="Provider">
+                        <setting string="API Base URL"
+                                 help="Any provider that speaks the OpenAI chat-completions API. Leave as is for Gemini.">
+                            <field name="chatbot_base_url" placeholder="https://generativelanguage.googleapis.com/v1beta/openai"/>
+                        </setting>
+                        <setting string="API Key"
+                                 help="Kept on the server. The assistant cannot reach the provider without it.">
+                            <field name="chatbot_api_key" password="True"/>
+                        </setting>
+                        <setting string="Model" help="Load the provider's list first, then pick one.">
+                            <div class="content-group">
+                                <button name="chatbot_load_models" type="object"
+                                        string="Load Models" class="btn-link" icon="fa-refresh"/>
+                                <field name="chatbot_model" class="w-100"/>
+                            </div>
+                        </setting>
+                    </block>
+                    <block title="Backup Provider"
+                           help="Used automatically when the provider above will not answer, for example when its free quota for the day is used up.">
+                        <setting string="Backup API Base URL"
+                                 help="Leave empty to have no backup. OpenRouter is pre-filled.">
+                            <field name="chatbot_backup_base_url" placeholder="https://openrouter.ai/api/v1"/>
+                        </setting>
+                        <setting string="Backup API Key"
+                                 help="Kept on the server, like the main key.">
+                            <field name="chatbot_backup_api_key" password="True"/>
+                        </setting>
+                        <setting string="Backup Model" help="Load the backup provider's list first, then pick one.">
+                            <div class="content-group">
+                                <button name="chatbot_load_backup_models" type="object"
+                                        string="Load Models" class="btn-link" icon="fa-refresh"/>
+                                <field name="chatbot_backup_model" class="w-100"/>
+                            </div>
+                        </setting>
+                    </block>
+                    <block title="Limits">
+                        <setting string="Max Model Calls"
+                                 help="How many times the assistant may go back to the model within one question before it stops.">
+                            <field name="chatbot_max_steps"/>
+                        </setting>
+                        <setting string="Max Answer Tokens">
+                            <field name="chatbot_max_tokens"/>
+                        </setting>
+                        <setting string="Temperature" help="Keep this low. The assistant is doing bookkeeping, not writing prose.">
+                            <field name="chatbot_temperature"/>
+                        </setting>
+                    </block>
+                    <block title="Who Can Chat">
+                        <setting string="Administrators only" help="The assistant runs with full access, so it is offered to administrators and nobody else.">
+                            <span class="text-muted">The bubble shows for users in the Administrators group.</span>
+                        </setting>
+                    </block>
+                </app>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="chatbot_settings_action" model="ir.actions.act_window">
+        <field name="name">Settings</field>
+        <field name="res_model">res.config.settings</field>
+        <field name="view_mode">form</field>
+        <field name="context">{'module': 'chatbot'}</field>
+    </record>
+</odoo>

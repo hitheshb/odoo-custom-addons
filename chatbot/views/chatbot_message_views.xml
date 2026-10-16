@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="chatbot_message_view_list" model="ir.ui.view">
+        <field name="name">chatbot.message.list</field>
+        <field name="model">chatbot.message</field>
+        <field name="arch" type="xml">
+            <list string="Chatbot Conversations"
+                  decoration-danger="state == 'error'"
+                  decoration-warning="state == 'waiting'">
+                <field name="create_date" string="When"/>
+                <field name="user_id" widget="many2one_avatar_user"/>
+                <field name="question"/>
+                <field name="answer" optional="show"/>
+                <field name="tool_count" string="Tools"/>
+                <field name="state" widget="badge"/>
+                <field name="llm_model" optional="hide"/>
+                <field name="prompt_tokens" optional="hide"/>
+                <field name="completion_tokens" optional="hide"/>
+                <field name="duration_ms" optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="chatbot_message_view_form" model="ir.ui.view">
+        <field name="name">chatbot.message.form</field>
+        <field name="model">chatbot.message</field>
+        <field name="arch" type="xml">
+            <form string="Chatbot Conversation" create="false">
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="question" placeholder="Question"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="user_id"/>
+                            <field name="create_date" string="Asked At"/>
+                            <field name="state"/>
+                        </group>
+                        <group>
+                            <field name="screen_model"/>
+                            <field name="screen_res_id"/>
+                            <field name="llm_model"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Answer" name="answer">
+                            <field name="answer" nolabel="1" readonly="1"/>
+                            <field name="error" readonly="1" invisible="not error"/>
+                        </page>
+                        <page string="What It Touched" name="tools">
+                            <field name="tool_call_ids" readonly="1">
+                                <list decoration-danger="state == 'error'"
+                                      decoration-muted="state == 'denied'">
+                                    <field name="name"/>
+                                    <field name="summary"/>
+                                    <field name="model_name"/>
+                                    <field name="res_ids"/>
+                                    <field name="record_count"/>
+                                    <field name="state" widget="badge"/>
+                                    <field name="guarded"/>
+                                    <field name="duration_ms"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Cost" name="usage">
+                            <group>
+                                <field name="step_count"/>
+                                <field name="prompt_tokens"/>
+                                <field name="completion_tokens"/>
+                                <field name="duration_ms"/>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="chatbot_message_view_search" model="ir.ui.view">
+        <field name="name">chatbot.message.search</field>
+        <field name="model">chatbot.message</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="question"/>
+                <field name="user_id"/>
+                <field name="screen_model"/>
+                <filter name="filter_error" string="Failed" domain="[('state', '=', 'error')]"/>
+                <filter name="filter_waiting" string="Waiting For Confirmation" domain="[('state', '=', 'waiting')]"/>
+                <separator/>
+                <filter name="filter_today" string="Today" domain="[('create_date', '&gt;=', context_today().strftime('%Y-%m-%d'))]"/>
+                <group>
+                    <filter name="group_user" string="Asked By" domain="[]" context="{'group_by': 'user_id'}"/>
+                    <filter name="group_state" string="State" domain="[]" context="{'group_by': 'state'}"/>
+                    <filter name="group_model" string="Model Used" domain="[]" context="{'group_by': 'llm_model'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="chatbot_message_action" model="ir.actions.act_window">
+        <field name="name">Conversations</field>
+        <field name="res_model">chatbot.message</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="chatbot_message_view_search"/>
+        <field name="context">{'search_default_filter_today': 1}</field>
+    </record>
+</odoo>
