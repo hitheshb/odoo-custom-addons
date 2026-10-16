@@ -153,7 +153,7 @@
     <menuitem id="menu_stock_dispatch_report"
               name="Dispatch Report"
               parent="stock.menu_warehouse_report"
-              action="action_stock_dispatch_report"
+              action="stock_dispatch_report.action_stock_dispatch_report_wizard"
               sequence="50"/>
 
 </odoo>

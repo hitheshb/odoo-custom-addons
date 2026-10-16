@@ -1,0 +1,122 @@
+{
+  "$schema": "https://aka.ms/codetour-schema",
+  "title": "Stock Dispatch Report - the big picture",
+  "steps": [
+    {
+      "title": "The goal",
+      "description": "Warehouse people want one simple screen that answers: what did we plan to move, what did we actually move, for which product, to whom, and when.\n\nOdoo already stores all of this, but spread over many tables: stock moves, transfers, products, sale orders. This module gathers it into one flat report, lets the user pick a date range, and lets them either view it on screen or download it as an Excel file.\n\nThe tour follows the same path a user takes: menu, date popup, report, download."
+    },
+    {
+      "file": "stock_dispatch_report/__manifest__.py",
+      "line": 9,
+      "title": "Step 1 - The manifest",
+      "description": "The manifest is the ID card of the module. Odoo reads it first.\n\nDepends says this module needs stock, which gives us stock moves and transfers, and sale stock, which links a stock move back to the sale order line that caused it.\n\nData is the list of files Odoo loads at install time, in order: security first, then the popup screen, then the report screens. Order matters because later files refer to things created by earlier ones."
+    },
+    {
+      "file": "stock_dispatch_report/models/stock_dispatch_report.py",
+      "line": 8,
+      "title": "Step 2 - A model with no table",
+      "description": "Normally an Odoo model creates its own database table. Here we set auto to False, which tells Odoo: do not create a table for this model.\n\nWhy? Because we are not storing any new data. Every row in this report already exists as a stock move. We only want a different way of looking at it.\n\nSo this model is a window onto existing data, not a new copy of it. That is why every field below is marked read only."
+    },
+    {
+      "file": "stock_dispatch_report/models/stock_dispatch_report.py",
+      "line": 12,
+      "title": "Step 3 - The columns of the report",
+      "description": "Each field here becomes one column that a user can see, filter, group or sum.\n\nThe comments group them by where the data comes from: the stock move itself, locations, the transfer, the product, and the sale order.\n\nNotice these are only declarations. They tell Odoo what columns exist and what type each one is. The actual values come from the database view in the next step."
+    },
+    {
+      "file": "stock_dispatch_report/models/stock_dispatch_report.py",
+      "line": 67,
+      "title": "Step 4 - The init method builds a database view",
+      "description": "Init runs every time the module is installed or upgraded. It drops the old database view and creates a fresh one.\n\nA database view is a saved query that behaves like a read only table. Whenever Odoo asks for report rows, the database runs this query live, so the report is always up to date and nothing needs syncing.\n\nThis is the technical heart of the module."
+    },
+    {
+      "file": "stock_dispatch_report/models/stock_dispatch_report.py",
+      "line": 71,
+      "title": "Step 5 - A safety check for the HSN code",
+      "description": "The HSN code is an Indian tax code and only exists once the Indian localization is installed.\n\nInstead of forcing that whole localization on everyone, the code first checks whether the column exists. If it does, it uses it. If not, it fills the column with an empty value. The report works in both cases."
+    },
+    {
+      "file": "stock_dispatch_report/models/stock_dispatch_report.py",
+      "line": 110,
+      "title": "Step 6 - Joining the tables together",
+      "description": "The query starts from the stock move table, since one report row equals one stock move.\n\nThen it joins the other tables to pull in extra details: product, product template, transfer, operation type, sale order line and sale order.\n\nA plain join keeps only rows that have a match. A left join keeps the row even when there is no match. Left joins are used for the transfer and the sale order because many moves, like inventory adjustments, have neither.\n\nThe done quantity is worked out in the select part: if the move is marked picked, take its quantity, otherwise zero."
+    },
+    {
+      "file": "stock_dispatch_report/wizards/stock_dispatch_report_wizard.py",
+      "line": 6,
+      "title": "Step 7 - The date popup is a transient model",
+      "description": "Before showing the report we ask the user for a date range. That popup is a wizard.\n\nA transient model is a normal model whose records are temporary. Odoo cleans them up automatically after a while. It is perfect for holding what the user typed into a popup.\n\nThe two date fields default to the first day of this month and today, so most of the time the user can just press a button."
+    },
+    {
+      "file": "stock_dispatch_report/wizards/stock_dispatch_report_wizard.py",
+      "line": 17,
+      "title": "Step 8 - Turning dates into a filter",
+      "description": "A domain is Odoo's way of writing a filter. Each condition says field, comparison, value.\n\nHere the filter says: scheduled date is on or after the start date, and before the day after the end date. Adding one day makes the end date inclusive, so a move at 5 pm on the last day is still included.\n\nBoth buttons of the popup use this same filter, so the screen and the Excel file always match."
+    },
+    {
+      "file": "stock_dispatch_report/wizards/stock_dispatch_report_wizard.py",
+      "line": 26,
+      "title": "Step 9 - View List button",
+      "description": "This method loads the report window action, then attaches the date filter to it and returns it.\n\nReturning an action from a button method is how Odoo navigates. The browser receives it and opens the report screen with only the rows in the chosen range."
+    },
+    {
+      "file": "stock_dispatch_report/wizards/stock_dispatch_report_wizard.py",
+      "line": 33,
+      "title": "Step 10 - Download Excel button",
+      "description": "This method does no work itself. It only builds a web address that carries the two dates, and returns an action of type URL.\n\nThe browser follows that address, which is handled by the controller in the next step. A file download is a plain web request, which is why it goes through a URL rather than through a normal Odoo action."
+    },
+    {
+      "file": "stock_dispatch_report/controllers/stock_dispatch_report_controller.py",
+      "line": 26,
+      "title": "Step 11 - The controller serves the file",
+      "description": "A controller is a Python method that answers a web address. This one answers the download address.\n\nThe route says the user must be logged in, and that it only reads data and never writes. It receives the two dates from the address, builds the same date filter, and searches the report model.\n\nThe search returns the rows as a list of dictionaries. Related fields like product come back as an id and name pair, so the code keeps only the name for the spreadsheet."
+    },
+    {
+      "file": "stock_dispatch_report/controllers/stock_dispatch_report_controller.py",
+      "line": 9,
+      "title": "Step 12 - Which columns go into Excel",
+      "description": "This list decides which columns appear in the spreadsheet and what their headings say.\n\nWant a new column in the Excel file? Add a line here. The screen list and the Excel file are configured separately, so they can differ."
+    },
+    {
+      "file": "stock_dispatch_report/controllers/stock_dispatch_report_controller.py",
+      "line": 49,
+      "title": "Step 13 - Writing the spreadsheet",
+      "description": "The xlsxwriter library builds the workbook in memory, so nothing is saved on the server disk.\n\nThe code writes a heading row, then one row per record, and widens each column to fit its longest value.\n\nFinally the bytes are sent back with a header that names the file and tells the browser to download it."
+    },
+    {
+      "file": "stock_dispatch_report/wizards/stock_dispatch_report_wizard_views.xml",
+      "line": 4,
+      "title": "Step 14 - The popup screen",
+      "description": "Views are written in XML and describe how a screen looks.\n\nThis form shows the two date fields and, in the footer, three buttons. The first two call the Python methods we just read, by name. The third simply closes the popup.\n\nThe action below the form opens it as a popup, because its target is set to new."
+    },
+    {
+      "file": "stock_dispatch_report/views/stock_dispatch_report_views.xml",
+      "line": 4,
+      "title": "Step 15 - The report list screen",
+      "description": "The list view chooses which columns show up. Create, edit and delete are switched off because this is a read only report.\n\nSome columns are marked optional, so the user can turn them on or off from the column menu. The sum attribute adds a total at the bottom of a column. The status column is shown as a coloured badge.\n\nThe same data is also offered as a pivot table and a graph just below, for quick analysis."
+    },
+    {
+      "file": "stock_dispatch_report/views/stock_dispatch_report_views.xml",
+      "line": 65,
+      "title": "Step 16 - Search box, filters and grouping",
+      "description": "The search view defines what the user can type into the search box, the one click filters like Done, Pending or Deliveries, and the group by choices like product or partner.\n\nThis is what turns a long flat list into something a person can explore."
+    },
+    {
+      "file": "stock_dispatch_report/views/stock_dispatch_report_views.xml",
+      "line": 135,
+      "title": "Step 17 - The report window action",
+      "description": "An action is what a menu or a button opens. This one opens the report model with list, pivot and graph views, and hides cancelled moves by default.\n\nNotice the menu item at the bottom of the file. It does not point at this action. It points at the popup action, so the user always passes through the date question first, and the popup then opens this report window."
+    },
+    {
+      "file": "stock_dispatch_report/security/ir.access.csv",
+      "line": 2,
+      "title": "Step 18 - Who may see it",
+      "description": "Nothing works in Odoo until access is granted.\n\nThe first line lets the stock user group read the report. The second is a company rule, so people only see moves that belong to their allowed companies. The third lets the same group create and use the popup records.\n\nIn Odoo 20 this file replaces the older access file, and the operation column holds letters for create, read, update and delete instead of separate columns."
+    },
+    {
+      "title": "The whole flow in one breath",
+      "description": "User opens the menu, a popup asks for dates. Press View List and the wizard returns the report action with a date filter. Press Download Excel and the browser calls the controller, which runs the same filter and writes a spreadsheet.\n\nBehind both, one database view flattens stock moves and their related records into a single read only report. No data is copied, so it is always live.\n\nTry it yourself: change the default date in the wizard, or add one more column to the Excel list, and upgrade the module to see the result."
+    }
+  ]
+}

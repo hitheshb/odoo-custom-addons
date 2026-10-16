@@ -1,0 +1,214 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Dashboard -->
+    <record id="admin_dashboard_view_form" model="ir.ui.view">
+        <field name="name">admin.dashboard.form</field>
+        <field name="model">admin.dashboard</field>
+        <field name="arch" type="xml">
+            <form create="0" edit="0" delete="0">
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button class="oe_stat_button" type="object" name="action_online" icon="fa-circle text-success">
+                            <field name="online_count" widget="statinfo" string="Online now"/>
+                        </button>
+                        <button class="oe_stat_button" type="object" name="action_online" icon="fa-clock-o">
+                            <field name="away_count" widget="statinfo" string="Away"/>
+                        </button>
+                        <button class="oe_stat_button" type="object" name="action_sessions" icon="fa-clone">
+                            <field name="multi_session_count" widget="statinfo" string="Multi-session users"/>
+                        </button>
+                        <button class="oe_stat_button" type="object" name="action_alerts" icon="fa-bell text-warning">
+                            <field name="alert_count" widget="statinfo" string="Open alerts"/>
+                        </button>
+                        <button class="oe_stat_button" type="object" name="action_temp" icon="fa-key">
+                            <field name="temp_active_count" widget="statinfo" string="Temp access"/>
+                        </button>
+                        <button class="oe_stat_button" type="object" name="action_temp" icon="fa-hourglass-end">
+                            <field name="temp_expiring_count" widget="statinfo" string="Expiring in 24h"/>
+                        </button>
+                        <button class="oe_stat_button" type="object" name="action_activity" icon="fa-bar-chart">
+                            <field name="activity_today" widget="statinfo" string="Changes today"/>
+                        </button>
+                    </div>
+                    <separator string="What is everyone doing now"/>
+                    <field name="now_html" nolabel="1"/>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="admin_dashboard_server_action" model="ir.actions.server">
+        <field name="name">Administration Dashboard</field>
+        <field name="model_id" ref="model_admin_dashboard"/>
+        <field name="state">code</field>
+        <field name="code">action = model.action_open()</field>
+    </record>
+
+    <!-- Employee status -->
+    <record id="hr_employee_admin_view_list" model="ir.ui.view">
+        <field name="name">hr.employee.admin.list</field>
+        <field name="model">hr.employee</field>
+        <field name="arch" type="xml">
+            <list create="0" delete="0">
+                <field name="name"/>
+                <field name="user_id"/>
+                <field name="resource_calendar_id"/>
+                <field name="admin_working_now"/>
+                <field name="attendance_state"/>
+                <field name="admin_last_seen"/>
+                <field name="admin_status"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="hr_employee_admin_action" model="ir.actions.act_window">
+        <field name="name">Employee Status</field>
+        <field name="res_model">hr.employee</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('user_id', '!=', False)]</field>
+        <field name="view_ids" eval="[(5, 0, 0), (0, 0, {'view_mode': 'list', 'view_id': ref('hr_employee_admin_view_list')})]"/>
+    </record>
+
+    <!-- Alerts -->
+    <record id="admin_alert_view_list" model="ir.ui.view">
+        <field name="name">admin.alert.list</field>
+        <field name="model">admin.alert</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="create_date"/>
+                <field name="user_id"/>
+                <field name="message"/>
+                <field name="resolved"/>
+                <button name="action_resolve" type="object" string="Resolve" icon="fa-check" invisible="resolved"/>
+            </list>
+        </field>
+    </record>
+    <record id="admin_alert_action" model="ir.actions.act_window">
+        <field name="name">Alerts</field>
+        <field name="res_model">admin.alert</field>
+        <field name="view_mode">list</field>
+        <field name="domain">[('resolved', '=', False)]</field>
+    </record>
+
+    <!-- Temporary access -->
+    <record id="admin_temp_access_view_list" model="ir.ui.view">
+        <field name="name">admin.temp.access.list</field>
+        <field name="model">admin.temp.access</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="user_id"/>
+                <field name="group_ids" widget="many2many_tags"/>
+                <field name="date_from"/>
+                <field name="date_to"/>
+                <field name="state" widget="badge"/>
+            </list>
+        </field>
+    </record>
+    <record id="admin_temp_access_view_form" model="ir.ui.view">
+        <field name="name">admin.temp.access.form</field>
+        <field name="model">admin.temp.access</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_cancel" type="object" string="Cancel" invisible="state not in ('scheduled', 'active')"/>
+                    <field name="state" widget="statusbar"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="user_id" readonly="state != 'scheduled'"/>
+                            <field name="group_ids" widget="many2many_tags" readonly="state != 'scheduled'"/>
+                        </group>
+                        <group>
+                            <field name="date_from" readonly="state != 'scheduled'"/>
+                            <field name="date_to" readonly="state in ('expired', 'cancelled')"/>
+                            <field name="note"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="admin_temp_access_action" model="ir.actions.act_window">
+        <field name="name">Temporary Access</field>
+        <field name="res_model">admin.temp.access</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <!-- Access simulation -->
+    <record id="admin_access_simulation_view_form" model="ir.ui.view">
+        <field name="name">admin.access.simulation.form</field>
+        <field name="model">admin.access.simulation</field>
+        <field name="arch" type="xml">
+            <form create="0">
+                <sheet>
+                    <group><field name="user_id"/></group>
+                    <field name="report_html" nolabel="1"/>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="admin_access_simulation_action" model="ir.actions.act_window">
+        <field name="name">User Access Simulation</field>
+        <field name="res_model">admin.access.simulation</field>
+        <field name="view_mode">form</field>
+        <field name="target">current</field>
+    </record>
+
+    <!-- Weekly summary -->
+    <record id="admin_weekly_summary_view_form" model="ir.ui.view">
+        <field name="name">admin.weekly.summary.form</field>
+        <field name="model">admin.weekly.summary</field>
+        <field name="arch" type="xml">
+            <form create="0">
+                <sheet>
+                    <group>
+                        <field name="week_start"/>
+                        <field name="user_id"/>
+                    </group>
+                    <field name="summary_html" nolabel="1"/>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="admin_weekly_summary_action" model="ir.actions.act_window">
+        <field name="name">Weekly Work Summary</field>
+        <field name="res_model">admin.weekly.summary</field>
+        <field name="view_mode">form</field>
+        <field name="target">current</field>
+    </record>
+
+    <!-- User form -->
+    <record id="res_users_view_form_inherit_administration" model="ir.ui.view">
+        <field name="name">res.users.form.inherit.administration</field>
+        <field name="model">res.users</field>
+        <field name="inherit_id" ref="base.view_users_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//page[@name='access_rights']" position="after">
+                <page string="Administration" name="administration" groups="base.group_system">
+                    <group>
+                        <group string="Session policy">
+                            <field name="idle_timeout"/>
+                            <field name="single_session"/>
+                            <field name="inactive_alert_days"/>
+                        </group>
+                        <group string="Activity">
+                            <field name="login_date"/>
+                            <field name="admin_last_seen"/>
+                            <field name="admin_status"/>
+                            <field name="session_count"/>
+                        </group>
+                    </group>
+                    <field name="temp_access_ids">
+                        <list>
+                            <field name="group_ids" widget="many2many_tags"/>
+                            <field name="date_from"/>
+                            <field name="date_to"/>
+                            <field name="state"/>
+                        </list>
+                    </field>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>

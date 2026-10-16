@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem id="menu_test_access_management_root"
+              name="Test Access Management"
+              sequence="91"
+              groups="base.group_system"/>
+
+    <menuitem id="menu_test_access_profile"
+              name="Access Profiles"
+              parent="menu_test_access_management_root"
+              action="test_access_profile_action"
+              sequence="10"
+              groups="base.group_system"/>
+</odoo>

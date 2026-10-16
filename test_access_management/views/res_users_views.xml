@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="res_users_view_form_inherit_test_access_profile" model="ir.ui.view">
+        <field name="name">res.users.form.inherit.test.access.profile</field>
+        <field name="model">res.users</field>
+        <field name="inherit_id" ref="base.view_users_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//header" position="inside">
+                <button string="Import Groups" type="object" name="action_open_access_import" groups="base.group_system"/>
+                <button string="Export Groups" type="object" name="action_export_groups_xlsx" groups="base.group_system"/>
+            </xpath>
+            <xpath expr="//page[@name='access_rights']" position="after">
+                <page string="Access Profiles" name="test_access_profiles" groups="base.group_system">
+                    <div class="d-flex gap-2 mb-3">
+                        <button string="Export XLSX" type="object" name="action_export_profiles_xlsx"
+                                class="btn-secondary" invisible="not id"/>
+                        <button string="Upload XLSX" type="object" name="action_open_profile_upload"
+                                class="btn-secondary" invisible="not id"/>
+                    </div>
+                    <field name="test_profile_ids" widget="many2many_tags"/>
+                    <separator string="Combined Access Lines"/>
+                    <field name="test_profile_line_ids" readonly="1">
+                        <list>
+                            <field name="profile_id"/>
+                            <field name="name"/>
+                            <field name="model_id"/>
+                            <field name="group_id"/>
+                            <field name="for_create"/>
+                            <field name="for_read"/>
+                            <field name="for_write"/>
+                            <field name="for_unlink"/>
+                            <field name="domain"/>
+                            <field name="kind"/>
+                        </list>
+                    </field>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="res_users_view_form_profile_tab" model="ir.ui.view">
+        <field name="name">res.users.form.profile.tab</field>
+        <field name="model">res.users</field>
+        <field name="mode">primary</field>
+        <field name="inherit_id" ref="res_users_view_form_inherit_test_access_profile"/>
+        <field name="arch" type="xml">
+            <xpath expr="//page[@name='test_access_profiles']" position="attributes">
+                <attribute name="autofocus">autofocus</attribute>
+            </xpath>
+        </field>
+    </record>
+</odoo>

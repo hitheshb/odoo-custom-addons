@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_stock_dispatch_report_wizard_form" model="ir.ui.view">
+        <field name="name">stock.dispatch.report.wizard.form</field>
+        <field name="model">stock.dispatch.report.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Dispatch Report">
+                <group>
+                    <field name="date_from"/>
+                    <field name="date_to"/>
+                </group>
+                <footer>
+                    <button name="action_view_list" string="View List"
+                            type="object" class="btn-primary"/>
+                    <button name="action_download_xlsx" string="Download Excel"
+                            type="object" class="btn-secondary"/>
+                    <button string="Cancel" special="cancel" class="btn-secondary"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_stock_dispatch_report_wizard" model="ir.actions.act_window">
+        <field name="name">Dispatch Report</field>
+        <field name="res_model">stock.dispatch.report.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="view_id" ref="view_stock_dispatch_report_wizard_form"/>
+        <field name="target">new</field>
+    </record>
+
+</odoo>

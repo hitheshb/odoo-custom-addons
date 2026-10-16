@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="print_log_view_list" model="ir.ui.view">
+        <field name="name">uam.print.log.list</field>
+        <field name="model">uam.print.log</field>
+        <field name="arch" type="xml">
+            <list create="0" edit="0" delete="0">
+                <field name="create_date" string="Downloaded"/>
+                <field name="user_id" widget="many2one_avatar_user"/>
+                <field name="report_id"/>
+                <field name="record_name"/>
+                <field name="label" widget="badge" decoration-success="copy_no == 0" decoration-warning="copy_no > 0"/>
+                <field name="copy_no" column_invisible="1"/>
+                <button name="action_download" type="object" icon="download" title="Download this copy"/>
+            </list>
+        </field>
+    </record>
+    <record id="print_log_view_search" model="ir.ui.view">
+        <field name="name">uam.print.log.search</field>
+        <field name="model">uam.print.log</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="record_name"/>
+                <field name="user_id"/>
+                <field name="report_id"/>
+                <filter name="original" string="Originals" domain="[('copy_no', '=', 0)]"/>
+                <filter name="copies" string="Copies" domain="[('copy_no', '>', 0)]"/>
+                <separator/>
+                <filter name="today" string="Today" domain="[('create_date', '>=', context_today().strftime('%Y-%m-%d'))]"/>
+                <group>
+                    <filter name="by_user" string="User" context="{'group_by': 'user_id'}"/>
+                    <filter name="by_report" string="Report" context="{'group_by': 'report_id'}"/>
+                    <filter name="by_document" string="Document" context="{'group_by': 'record_name'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+    <record id="print_log_action" model="ir.actions.act_window">
+        <field name="name">Print Log</field>
+        <field name="res_model">uam.print.log</field>
+        <field name="view_mode">list</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No PDFs downloaded yet</p>
+            <p>Every PDF downloaded from any app is listed here, marked Original or Copy, and can be downloaded again.</p>
+        </field>
+    </record>
+</odoo>

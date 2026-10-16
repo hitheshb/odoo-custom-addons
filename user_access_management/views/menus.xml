@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem id="menu_uam_root" name="User Access" sequence="91" groups="base.group_system" action="uam_dashboard_action"/>
+    <menuitem id="menu_uam_dashboard" name="Dashboard" parent="menu_uam_root" action="uam_dashboard_action" sequence="1"/>
+    <menuitem id="menu_uam_users" name="Users" parent="menu_uam_root" action="user_action" sequence="10"/>
+    <menuitem id="menu_uam_privileges" name="Privileges" parent="menu_uam_root" sequence="20"/>
+    <menuitem id="menu_uam_groups" name="Groups" parent="menu_uam_privileges" action="group_action" sequence="20"/>
+    <menuitem id="menu_uam_access" name="Access Rights" parent="menu_uam_privileges" action="access_action" sequence="30"/>
+    <menuitem id="menu_uam_logs" name="Logs" parent="menu_uam_root" sequence="40"/>
+    <menuitem id="menu_uam_log" name="Change Log" parent="menu_uam_logs" action="access_change_log_action" sequence="10"/>
+    <menuitem id="menu_uam_temp_access" name="Temporary Access" parent="menu_uam_privileges" action="temp_access_action" sequence="50"/>
+    <menuitem id="menu_uam_access_lock" name="Access Lock" parent="menu_uam_privileges" action="access_lock_action" sequence="60"/>
+    <menuitem id="menu_uam_simulation" name="Access Simulation" parent="menu_uam_privileges" action="access_simulation_action" sequence="70"/>
+    <menuitem id="menu_uam_work" name="Work Updates" parent="menu_uam_logs" action="work_update_action" sequence="20"/>
+    <menuitem id="menu_uam_print_log" name="Print Log" parent="menu_uam_logs" action="print_log_action" sequence="30"/>
+    <menuitem id="menu_uam_usage" name="Model Usage" parent="menu_uam_logs" action="model_usage_action" sequence="40"/>
+    <menuitem id="menu_uam_config" name="Configuration" parent="menu_uam_root" sequence="90"/>
+    <menuitem id="menu_uam_settings" name="Settings" parent="menu_uam_config" action="uam_settings_action" sequence="10"/>
+</odoo>

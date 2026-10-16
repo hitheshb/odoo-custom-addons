@@ -1,0 +1,37 @@
+// Shared signal palette for every user_access_management screen.
+:root {
+    --uam-online: #0E9F8E;
+    --uam-away: #D99A1E;
+    --uam-alert: #B42339;
+    --uam-accent: #3554D1;
+}
+
+.o_uam_badge {
+    --c: var(--bs-secondary-color);
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 1px 8px; border-radius: 999px; font-size: 12px; font-weight: 600;
+    color: var(--c); border: 1px solid color-mix(in srgb, var(--c) 45%, transparent);
+    background: color-mix(in srgb, var(--c) 9%, transparent);
+    &--online { --c: var(--uam-online); }
+    &--away { --c: var(--uam-away); }
+    &--alert { --c: var(--uam-alert); }
+    &--accent { --c: var(--uam-accent); }
+    &--dark { --c: var(--bs-emphasis-color); }
+    &--copy { --c: var(--uam-away); border-style: dashed; }
+    &--original { --c: #fff; background: var(--uam-online); border-color: var(--uam-online); }
+}
+
+.o_uam_cell--ok { color: var(--uam-online); font-weight: 700; }
+.o_uam_cell--partial { color: var(--uam-away); font-weight: 700; }
+.o_uam_cell--no { color: var(--uam-alert); font-weight: 700; }
+tr.o_uam_diff > td:first-child { box-shadow: inset 3px 0 0 var(--uam-away); }
+
+// .o_kanban_record prefix: Odoo's kanban aside rules otherwise reset the border.
+.o_uam_ring, .o_kanban_record .o_uam_ring {
+    --ring: var(--bs-secondary-color);
+    border-radius: 50%; padding: 2px; border: 3px solid var(--ring);
+    &.o_uam_ring--online { --ring: var(--uam-online); }
+    &.o_uam_ring--away { --ring: var(--uam-away); }
+}
+
+.o_uam_tags_clip { max-height: 26px; overflow: hidden; }

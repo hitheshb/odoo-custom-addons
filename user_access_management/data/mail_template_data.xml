@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="mail_template_stale_reminder" model="mail.template">
+        <field name="name">User Access: login reminder</field>
+        <field name="model_id" ref="base.model_res_users"/>
+        <field name="subject">Your {{ object.company_id.name }} account hasn't been used recently</field>
+        <field name="lang">{{ object.lang }}</field>
+        <field name="body_html" type="html">
+            <div>
+                <p>Hello <t t-out="object.name"/>,</p>
+                <p>You have not logged in since <t t-out="format_datetime(object.login_date) if object.login_date else 'your account was created'"/>.</p>
+                <p>If you still need access, please log in. Otherwise your administrator may archive the account.</p>
+            </div>
+        </field>
+    </record>
+</odoo>

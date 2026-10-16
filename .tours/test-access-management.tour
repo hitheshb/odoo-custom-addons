@@ -1,0 +1,854 @@
+{
+  "$schema": "https://aka.ms/codetour-schema",
+  "title": "Test Access Management full walkthrough",
+  "steps": [
+    {
+      "title": "The goal",
+      "description": "We are reading a finished module called Test Access Management. It is a complete reference build of an access management feature for Odoo twenty.\n\nThe problem it solves is this. In Odoo, what a user may do is decided by security groups. Giving a new accountant the right ten groups by hand, one click at a time, is slow and easy to get wrong. This module lets you build a named package called an access profile. Put the profile on a user, and the module hands that user the right groups. Take the profile away, and the module takes those groups back.\n\nThere are four pieces. First, the models, which store profiles, their lines, and a ledger of what was granted. Second, the sync logic, which actually adds and removes groups. Third, Excel export and upload, so a whole profile can be edited in a spreadsheet. Fourth, the screens and the tests.\n\nA profile does not enforce anything itself. Odoo still enforces access through groups as always. The profile is only a clever way to hand out groups.\n\nListen in order. Each step says what the code is solving, not just what it is."
+    },
+    {
+      "title": "The manifest",
+      "description": "This is the label on the box. Odoo reads this file first when it loads the module.\n\nIt holds the name, the version, a short summary and a category. The depends list says this module needs only the base module, which every Odoo has.\n\nThe data list is the most important part. It names the files Odoo must load at install time, in order. Security comes first, then the views, then the wizard screen, and menus last, because a menu points at an action that must already exist.\n\nApplication true makes it appear as a full app in the Apps list and gets its own icon on the home screen.",
+      "file": "test_access_management/__manifest__.py",
+      "selection": {
+        "start": {
+          "line": 1,
+          "character": 1
+        },
+        "end": {
+          "line": 17,
+          "character": 2
+        }
+      }
+    },
+    {
+      "title": "Package wiring",
+      "description": "Python only runs code it has been told to import. This file is the front door of the module.\n\nIt imports three folders: controllers, models and wizard. Each of those has its own init file that imports the real files inside. If a file is not imported somewhere in this chain, Odoo never sees it, and its models silently do not exist.\n\nNotice the utils folder is not listed here. That is fine. It only holds plain helper functions, and other files import it directly when they need it.",
+      "file": "test_access_management/__init__.py",
+      "selection": {
+        "start": {
+          "line": 1,
+          "character": 1
+        },
+        "end": {
+          "line": 3,
+          "character": 21
+        }
+      }
+    },
+    {
+      "title": "Model wiring",
+      "description": "Same idea, one level down. This file imports the four model files.\n\nThe order matters a little. The profile comes first, then its lines, then the grant ledger, then the extra fields we add onto users. Odoo is forgiving about order between models, but keeping them in a sensible order makes the module easier to read.",
+      "file": "test_access_management/models/__init__.py",
+      "selection": {
+        "start": {
+          "line": 1,
+          "character": 1
+        },
+        "end": {
+          "line": 4,
+          "character": 24
+        }
+      }
+    },
+    {
+      "title": "Security rules",
+      "description": "Odoo blocks access to every new model by default. Without a rule here, even an administrator would get an access error when opening our screens.\n\nThis file gives four models the same rule. The group is the system administrator group, and the operation is crud, which stands for create, read, update and delete. In plain words: administrators may do everything, and nobody else may touch these records.\n\nOdoo twenty changed this format. Older versions used a file called ir model access with four separate permission columns. Odoo twenty uses ir access with a single operation column.\n\nThe four models covered are the profile, the profile line, the grant ledger, and the upload wizard.",
+      "file": "test_access_management/security/ir.access.csv",
+      "selection": {
+        "start": {
+          "line": 1,
+          "character": 1
+        },
+        "end": {
+          "line": 5,
+          "character": 124
+        }
+      }
+    },
+    {
+      "title": "Profile model fields",
+      "description": "This is the main record of the module. A model is a Python class that Odoo turns into a database table. The name test dot access dot profile becomes the table test access profile.\n\nThe order setting means lists show profiles sorted by name.\n\nName is the profile title, such as Accountant, and it is required. Active is the standard Odoo archive switch. When it is false the profile is hidden and, as we will see, stops granting anything.\n\nUser ids is a many to many field. One profile can belong to many users, and one user can have many profiles. A many to many needs a middle table, and here we name it explicitly, along with the two column names inside it. The user side of the module reuses the exact same table name and swaps the columns, so both sides share one table.\n\nLine ids is a one to many field. It lists the access lines that belong to this profile. Each line points back to its profile through a field called profile id.",
+      "file": "test_access_management/models/access_profile.py",
+      "selection": {
+        "start": {
+          "line": 5,
+          "character": 1
+        },
+        "end": {
+          "line": 19,
+          "character": 96
+        }
+      }
+    },
+    {
+      "title": "Profile create",
+      "description": "This method runs whenever someone creates one or more profiles.\n\nFirst it calls super, which means run the normal Odoo creation. That returns the new profile records. Then it takes all the users on those new profiles and asks each of them to sync their groups. This matters when a profile is created already containing users, for example by an upload.\n\nFinally it returns the profiles, because Odoo expects create to return what it created.\n\nThe decorator model create multi means create receives a list of value dictionaries, so many records can be made in one call. That is faster than one at a time.",
+      "file": "test_access_management/models/access_profile.py",
+      "selection": {
+        "start": {
+          "line": 21,
+          "character": 1
+        },
+        "end": {
+          "line": 25,
+          "character": 24
+        }
+      }
+    },
+    {
+      "title": "Profile write",
+      "description": "Write runs whenever a profile is edited. This is where most of the live behaviour starts.\n\nBefore saving, it remembers who the users were. After saving, it checks if the edit touched users, lines or the active flag. Those are the only edits that can change who deserves which groups. Renaming a profile changes nothing, so it skips the work.\n\nThen it syncs the union of the old users and the new users. Why both? If you removed a user from the profile, that person is no longer in the new list, but still needs their groups taken back. The vertical bar joins two sets of records without duplicates.\n\nIt returns the result of the normal save, which is true.",
+      "file": "test_access_management/models/access_profile.py",
+      "selection": {
+        "start": {
+          "line": 27,
+          "character": 1
+        },
+        "end": {
+          "line": 32,
+          "character": 22
+        }
+      }
+    },
+    {
+      "title": "Profile delete",
+      "description": "When a profile is deleted, its users must lose the groups it gave them.\n\nThe trick is simple. Before deleting, it clears the user list using a command called clear. That goes through the write method we just saw, which triggers the sync and removes the groups. Only after that does it call super to really delete the record.\n\nWithout this, deleting a profile would leave its users holding groups from a profile that no longer exists, and nothing would ever clean them up.",
+      "file": "test_access_management/models/access_profile.py",
+      "selection": {
+        "start": {
+          "line": 34,
+          "character": 1
+        },
+        "end": {
+          "line": 36,
+          "character": 32
+        }
+      }
+    },
+    {
+      "title": "Admin check",
+      "description": "A small guard used by the buttons below. It asks whether the current user belongs to the system administrator group. If not, it raises an access error with a friendly message.\n\nIt returns nothing. Its only job is to stop the flow by raising an error. A method that returns nothing and raises on failure is a common pattern called a guard.\n\nThe message is wrapped in env underscore, which marks the text as translatable.",
+      "file": "test_access_management/models/access_profile.py",
+      "selection": {
+        "start": {
+          "line": 38,
+          "character": 1
+        },
+        "end": {
+          "line": 40,
+          "character": 78
+        }
+      }
+    },
+    {
+      "title": "Export button",
+      "description": "This runs when you click Export XLSX on a profile. Ensure one first checks that exactly one profile is selected, because the button only makes sense for a single record.\n\nThen the admin guard runs. Then it returns a dictionary. In Odoo, a button method can return an action dictionary describing what the browser should do next. Here the type is act url, which means go to a web address. The address is our export route in the controller, with the profile id inside it.\n\nSo the button does not build the file itself. It just sends the browser to a download link, and the controller does the real work.",
+      "file": "test_access_management/models/access_profile.py",
+      "selection": {
+        "start": {
+          "line": 42,
+          "character": 1
+        },
+        "end": {
+          "line": 49,
+          "character": 10
+        }
+      }
+    },
+    {
+      "title": "Upload button",
+      "description": "This runs when you click Upload XLSX on a profile.\n\nAfter the same single record check and admin guard, it asks the upload wizard to open itself, passing this profile as a default. The wizard is a temporary record, we will meet it later. The method returns whatever action the wizard hands back, which is a dictionary that opens a popup form.",
+      "file": "test_access_management/models/access_profile.py",
+      "selection": {
+        "start": {
+          "line": 51,
+          "character": 1
+        },
+        "end": {
+          "line": 54,
+          "character": 87
+        }
+      }
+    },
+    {
+      "title": "Line model basics",
+      "description": "A profile line is one row of the access sheet. Each line says what a group may do on a model.\n\nProfile id links the line to its profile. Ondelete cascade means if the profile is deleted, its lines are deleted too, so no orphan rows remain. Index true builds a database index, which makes searches by profile fast.\n\nName is a label for the line. Model id points to an Odoo model, such as partners or sales orders. Group id points to a security group, and it is optional.\n\nThe four boolean fields say which operations the line is about: create, read, update and delete. Read defaults to true because reading is the most common need.\n\nDomain is plain text holding a filter, such as only records I created. Odoo stores domains as text here so we can validate them ourselves.",
+      "file": "test_access_management/models/access_profile_line.py",
+      "selection": {
+        "start": {
+          "line": 8,
+          "character": 1
+        },
+        "end": {
+          "line": 27,
+          "character": 27
+        }
+      }
+    },
+    {
+      "title": "Permission or restriction",
+      "description": "Every line is one of two kinds, and the kind is worked out automatically from the group.\n\nA line with a group is a permission. It means this group is granted to the user. A line without a group is a restriction. It describes a limit on a model, with a domain, but gives no group.\n\nKind is a computed field. The decorator depends on group id tells Odoo to recompute it whenever the group changes. The method loops over self, which is a recordset, a collection of records, and sets the kind on each one. Compute methods return nothing. They assign to the field instead.\n\nStore true saves the answer in the database so it can be searched and shown quickly.\n\nCompare this with onchange. An onchange only runs while someone edits a form on screen. A computed stored field is always correct, even when records are created by code or by upload.",
+      "file": "test_access_management/models/access_profile_line.py",
+      "selection": {
+        "start": {
+          "line": 28,
+          "character": 1
+        },
+        "end": {
+          "line": 37,
+          "character": 73
+        }
+      }
+    },
+    {
+      "title": "No duplicate lines",
+      "description": "A constraint is a rule that must always hold. If it fails, Odoo refuses to save.\n\nThis one says that inside one profile, no two lines may share the same name, model and group. That trio is the identity of a line. The upload feature depends on it later, because it uses that trio to decide whether a spreadsheet row is a new line or an update of an existing one.\n\nFor each line it counts other lines, excluding itself, with the same profile, name, model and group. If the count is above zero, it raises a validation error. Search count returns an integer, and zero means no duplicates.\n\nThe decorator constrains lists the fields to watch. The check runs whenever any of them changes.",
+      "file": "test_access_management/models/access_profile_line.py",
+      "selection": {
+        "start": {
+          "line": 39,
+          "character": 1
+        },
+        "end": {
+          "line": 52,
+          "character": 19
+        }
+      }
+    },
+    {
+      "title": "Domain check",
+      "description": "This constraint makes sure the domain text on a line is sound, so a typo cannot break things later.\n\nIt loops over the lines and asks a helper called domain error for a message. If a message comes back, it raises a validation error with it. If nothing comes back, the line is fine.\n\nThe helper is separate on purpose. The upload wizard needs the very same check for spreadsheet rows, so both places share one piece of logic.",
+      "file": "test_access_management/models/access_profile_line.py",
+      "selection": {
+        "start": {
+          "line": 54,
+          "character": 1
+        },
+        "end": {
+          "line": 59,
+          "character": 45
+        }
+      }
+    },
+    {
+      "title": "Domain error helper",
+      "description": "This helper checks a domain text and returns either an error message as text, or None when all is well. It does not raise by itself. That lets the caller choose whether to raise or just collect messages.\n\nAn empty domain is fine. Otherwise it uses literal eval to turn the text into a real Python list. Literal eval is safe because it only reads plain values and never runs code. If the text is broken, it returns a message.\n\nThen it checks the model exists in this database. Then it wraps the list in a Domain object and calls validate against the model. That checks every field name in the filter really exists on that model. So a filter on a misspelled field is caught now, not when a user hits an error.",
+      "file": "test_access_management/models/access_profile_line.py",
+      "selection": {
+        "start": {
+          "line": 61,
+          "character": 1
+        },
+        "end": {
+          "line": 76,
+          "character": 20
+        }
+      }
+    },
+    {
+      "title": "Line create",
+      "description": "Whenever lines are created, the users of their profiles may need new groups.\n\nIt creates the lines first through super. Then it takes the profiles of those lines, then their users, and syncs them. Each step here returns a recordset: lines to profiles to users.\n\nThis is how adding a row to a profile instantly grants the group to everyone who has that profile.",
+      "file": "test_access_management/models/access_profile_line.py",
+      "selection": {
+        "start": {
+          "line": 78,
+          "character": 1
+        },
+        "end": {
+          "line": 82,
+          "character": 21
+        }
+      }
+    },
+    {
+      "title": "Line write",
+      "description": "Editing a line may change its group, or even move it to another profile.\n\nSo it remembers the users before saving, saves, then syncs the union of old and new users. It is the same before and after idea we saw on the profile. The union makes sure that users of the old profile lose the group, while users of the new profile gain it.",
+      "file": "test_access_management/models/access_profile_line.py",
+      "selection": {
+        "start": {
+          "line": 84,
+          "character": 1
+        },
+        "end": {
+          "line": 88,
+          "character": 22
+        }
+      }
+    },
+    {
+      "title": "Line delete",
+      "description": "Deleting a line must also take its group back.\n\nThe users are noted before the delete, because after the line is gone, we can no longer find its profile. Then the delete runs, then the users are synced. The sync sees the line is gone and revokes the group, unless some other profile still needs it.",
+      "file": "test_access_management/models/access_profile_line.py",
+      "selection": {
+        "start": {
+          "line": 90,
+          "character": 1
+        },
+        "end": {
+          "line": 94,
+          "character": 22
+        }
+      }
+    },
+    {
+      "title": "Line to sheet rows",
+      "description": "This turns lines into rows for the Excel file. It returns a list of lists, where each inner list is one spreadsheet row of nine cells.\n\nGroups are not written by database id, because ids differ between databases. Instead it uses the external id, a stable text name like base dot group system. The call get external id returns a dictionary from group id to that text.\n\nIf a group has no external id, the export cannot describe it in a way that can be imported elsewhere, so it raises a user error naming the group, instead of writing a broken file.\n\nThe cells follow the header order: name, model technical name, group external id, the four flags, the domain, and the kind. Domain becomes an empty string when missing.",
+      "file": "test_access_management/models/access_profile_line.py",
+      "selection": {
+        "start": {
+          "line": 96,
+          "character": 1
+        },
+        "end": {
+          "line": 119,
+          "character": 20
+        }
+      }
+    },
+    {
+      "title": "The grant ledger",
+      "description": "This small model is the memory of the whole system. It records every group that a profile granted to a user.\n\nEach row says: this user holds this group because of this profile. All three links cascade on delete, so the row vanishes if the user, the group or the profile is deleted.\n\nWas manual is the clever part. It records whether the user already had this group before any profile gave it. Imagine an admin gave someone the sales group by hand. Later a profile also includes that group. If the profile is removed, we must not take the group away, because a person put it there on purpose. This flag lets us remember that.\n\nThe constraint at the bottom says a user, group and profile combination can appear only once. It uses the new Odoo twenty style, a Constraint object on the class, instead of the older underscore sql constraints list.",
+      "file": "test_access_management/models/access_profile_grant.py",
+      "selection": {
+        "start": {
+          "line": 4,
+          "character": 1
+        },
+        "end": {
+          "line": 18,
+          "character": 6
+        }
+      }
+    },
+    {
+      "title": "Fields added to users",
+      "description": "Now we extend an existing Odoo model. Inherit res users means we add to the users model without copying it.\n\nTest profile ids is the user side of the many to many with profiles. It uses the same middle table, with the two columns swapped. That is how both sides stay in step. The groups setting restricts this field to administrators, so ordinary users cannot even see which profiles they have.\n\nTest profile line ids is a computed list showing all lines from all of this user's profiles together. It is read only and exists so an admin can see the combined access at a glance.",
+      "file": "test_access_management/models/res_users.py",
+      "selection": {
+        "start": {
+          "line": 5,
+          "character": 1
+        },
+        "end": {
+          "line": 21,
+          "character": 6
+        }
+      }
+    },
+    {
+      "title": "Combined lines",
+      "description": "This is the compute method behind that combined list.\n\nThe decorator depends names what it listens to: the active flag of the profiles, and their lines. When any of those change, the value is recalculated.\n\nFor each user it takes their profiles, keeps only the active ones with filtered, and reads line ids from all of them at once. Reading a field from a recordset gives the merged records of every item. That is the same idea as the mapped method, which collects one field across many records.\n\nThe result is a recordset of lines, assigned to the field. Archived profiles are skipped, matching what the sync does.",
+      "file": "test_access_management/models/res_users.py",
+      "selection": {
+        "start": {
+          "line": 23,
+          "character": 1
+        },
+        "end": {
+          "line": 26,
+          "character": 91
+        }
+      }
+    },
+    {
+      "title": "User create and write",
+      "description": "These two hooks make sure that a user's group list is right when their profiles change from the user screen.\n\nOn create, only the new users who actually got profiles are synced. Filtered with a field name keeps the records where that field is not empty.\n\nOn write, it first saves, then checks if the profile field was among the edited values. Only then does it sync. Both return the normal result, so nothing else in Odoo notices the difference.\n\nCombined with the profile and line hooks, every path that can change the answer, from the profile side, the line side or the user side, ends in the same sync method.",
+      "file": "test_access_management/models/res_users.py",
+      "selection": {
+        "start": {
+          "line": 28,
+          "character": 1
+        },
+        "end": {
+          "line": 38,
+          "character": 22
+        }
+      }
+    },
+    {
+      "title": "Sync part one",
+      "description": "This is the heart of the module. Its job is to make a user's groups match their profiles, without damaging anything done by hand.\n\nIt runs sudo, meaning with full rights, because it must edit group lists and the ledger regardless of who triggered it. Then it works one user at a time.\n\nFirst it works out what is needed. Needed is a set of pairs, group and profile, built from every active profile of the user and every group on that profile's lines. Needed groups is just the group side of those pairs.\n\nThen it looks at what the ledger already says: the existing rows, the pairs already recorded, the groups known to the ledger, and the groups that were manual. Finally held is the groups the user actually has right now.\n\nNothing is changed yet. This part only gathers facts.",
+      "file": "test_access_management/models/res_users.py",
+      "selection": {
+        "start": {
+          "line": 40,
+          "character": 1
+        },
+        "end": {
+          "line": 53,
+          "character": 43
+        }
+      }
+    },
+    {
+      "title": "Sync part two",
+      "description": "Now it decides what to remove and add.\n\nStale rows are ledger rows whose pair is no longer needed. That means the profile was removed, archived, or lost that line.\n\nGroups to remove are the groups of stale rows, minus any group still needed by another profile, minus any group that was manual. Two safety nets. If two profiles both give the same group, removing one profile must not take it away. And a group a human added is never taken.\n\nGroups to add are the needed groups the user does not hold yet. Doing this with sets keeps the logic short, since sets subtract cleanly.",
+      "file": "test_access_management/models/res_users.py",
+      "selection": {
+        "start": {
+          "line": 55,
+          "character": 1
+        },
+        "end": {
+          "line": 59,
+          "character": 49
+        }
+      }
+    },
+    {
+      "title": "Sync part three",
+      "description": "Now it records new ledger rows. For each needed pair that is not yet in the ledger, it makes a row.\n\nThe was manual value is decided here. If the group is already known to the ledger, because another profile granted it earlier, it copies that group's earlier flag. Otherwise it checks whether the user holds the group right now. If they hold it before any profile recorded it, a human must have given it, so was manual becomes true.\n\nThis works because it runs before the groups are added. That ordering is what keeps the ledger honest.",
+      "file": "test_access_management/models/res_users.py",
+      "selection": {
+        "start": {
+          "line": 61,
+          "character": 1
+        },
+        "end": {
+          "line": 72,
+          "character": 19
+        }
+      }
+    },
+    {
+      "title": "Sync part four",
+      "description": "The last stage applies the changes.\n\nStale ledger rows are deleted, then the new rows are created. Then the user's group list is updated with one write holding commands. Command link adds a group, and command unlink removes one. These are the Odoo twenty names for the old numeric tuples.\n\nThe method returns nothing. It works through side effects on the user and the ledger. It is also safe to run again and again, because it always compares needed against held, so a second run finds nothing to change. That property is called being idempotent, and it is why so many places can call it freely.",
+      "file": "test_access_management/models/res_users.py",
+      "selection": {
+        "start": {
+          "line": 74,
+          "character": 1
+        },
+        "end": {
+          "line": 79,
+          "character": 14
+        }
+      }
+    },
+    {
+      "title": "User side buttons",
+      "description": "These mirror the profile buttons, but start from a user.\n\nThe guard checks for an administrator. Export returns a link to the controller using the word user and the user id, so the file contains all lines from all of that user's active profiles.\n\nUpload opens the wizard with this user as the default, which then lets you choose an existing profile of theirs or make a new one. Both return action dictionaries, just like the profile buttons.",
+      "file": "test_access_management/models/res_users.py",
+      "selection": {
+        "start": {
+          "line": 81,
+          "character": 1
+        },
+        "end": {
+          "line": 97,
+          "character": 84
+        }
+      }
+    },
+    {
+      "title": "Sheet layout",
+      "description": "This file is the only place that knows about Excel. It uses the openpyxl library.\n\nHeaders is the fixed list of nine column titles. Both export and upload use it, so they can never drift apart.\n\nBuild xlsx takes a list of rows and returns the file as raw bytes. It makes a workbook, names the sheet Access Lines, writes the header and then every row. It sets column widths and freezes the top row so the header stays visible when scrolling.\n\nThe file is saved into an in memory buffer instead of the disk. Get value returns the bytes, which the controller can send straight to the browser. Nothing is ever written to a temporary file.",
+      "file": "test_access_management/utils/xlsx_io.py",
+      "selection": {
+        "start": {
+          "line": 1,
+          "character": 1
+        },
+        "end": {
+          "line": 20,
+          "character": 29
+        }
+      }
+    },
+    {
+      "title": "Reading a sheet",
+      "description": "This is the opposite direction. It takes raw bytes from an uploaded file and returns two things: the header as a list of clean text, and the body as a list of pairs.\n\nIt opens the workbook read only for speed, and with data only, so formulas give their values. It uses the first sheet and loads all rows.\n\nAn empty sheet returns two empty lists. Otherwise the header cells are turned into stripped text, with empty cells becoming empty text.\n\nEach body pair holds a row number and the cells. The numbering starts at two, because row one is the header. That way error messages can say Row five and match what the person sees in Excel.",
+      "file": "test_access_management/utils/xlsx_io.py",
+      "selection": {
+        "start": {
+          "line": 23,
+          "character": 1
+        },
+        "end": {
+          "line": 32,
+          "character": 24
+        }
+      }
+    },
+    {
+      "title": "Controller guard",
+      "description": "A controller serves web addresses. This one serves the download link our buttons point to.\n\nThe route has two variable parts: the kind, which is profile or user, and the record id. Type http means it returns a normal web response, not a data call. Auth user means you must be logged in.\n\nThe first thing the method does is check for an administrator. If not, it raises forbidden, which the browser sees as a four zero three. Logged in is not enough. Because this file reveals access setup, only administrators may download it.",
+      "file": "test_access_management/controllers/main.py",
+      "selection": {
+        "start": {
+          "line": 11,
+          "character": 1
+        },
+        "end": {
+          "line": 18,
+          "character": 30
+        }
+      }
+    },
+    {
+      "title": "Controller finds the lines",
+      "description": "Next it decides which lines to export.\n\nFor a profile, it looks it up with active test off, so archived profiles can still be exported. Browse takes the id, and exists drops it to an empty record if the id is not in the database. The lines are the profile's lines.\n\nFor a user, the lines are those of the user's active profiles, the same combined view as the screen.\n\nAny other kind raises not found, a four zero four. A missing record also raises not found. So bad links fail cleanly instead of crashing.",
+      "file": "test_access_management/controllers/main.py",
+      "selection": {
+        "start": {
+          "line": 19,
+          "character": 1
+        },
+        "end": {
+          "line": 28,
+          "character": 29
+        }
+      }
+    },
+    {
+      "title": "Controller sends the file",
+      "description": "Finally it builds the file. The lines are turned into rows, and the rows into xlsx bytes. A file name is made from the kind and the id.\n\nMake response wraps the bytes with headers. Content type tells the browser it is an Excel file. Content disposition with the word attachment tells the browser to download it instead of trying to show it.\n\nIt returns a response object, which Odoo sends back to the browser.",
+      "file": "test_access_management/controllers/main.py",
+      "selection": {
+        "start": {
+          "line": 29,
+          "character": 1
+        },
+        "end": {
+          "line": 34,
+          "character": 11
+        }
+      }
+    },
+    {
+      "title": "Upload wizard fields",
+      "description": "A wizard is a temporary popup form. It is a transient model, meaning Odoo stores its records in the database for a short while and cleans them up automatically. Compare with a normal model, whose records live forever.\n\nFile holds the uploaded spreadsheet. In Odoo twenty a binary field gives back a binary value object, and you read the raw bytes with dot content. There is no need to decode base sixty four any more.\n\nFilename remembers the original name. User and profile say where the rows should go. Target lets a user based upload choose between an existing profile and a new one, with the new name in its own field.\n\nError report is a read only text where problems are listed.\n\nThe constants above the class define which words count as true or false in a cell, and the two allowed kinds.",
+      "file": "test_access_management/wizard/profile_upload.py",
+      "selection": {
+        "start": {
+          "line": 1,
+          "character": 1
+        },
+        "end": {
+          "line": 24,
+          "character": 46
+        }
+      }
+    },
+    {
+      "title": "Opening the wizard",
+      "description": "Open action is a model level helper. The decorator model means it works on the model, not on a record. It creates a wizard record using the given defaults, then asks it to reopen itself. It returns an action dictionary.\n\nReopen builds that dictionary. Type window action with target new opens a form in a popup. It points at this exact record by id.\n\nWhy reopen as a separate method? After a failed upload, the wizard must show itself again with the error text filled in. So the same method is used both to open it and to refresh it.",
+      "file": "test_access_management/wizard/profile_upload.py",
+      "selection": {
+        "start": {
+          "line": 26,
+          "character": 1
+        },
+        "end": {
+          "line": 38,
+          "character": 10
+        }
+      }
+    },
+    {
+      "title": "The upload flow",
+      "description": "This is the method behind the Upload button. It reads like a short story.\n\nIt checks the user is an administrator, and that a file was chosen. It works out the target profile. It parses the file, which returns errors and rows. If there are any errors, they are joined into the report text, the wizard reopens, and nothing is saved. That is the all or nothing rule.\n\nIf the file is clean, it creates the new profile when needed, applies the rows, and returns an action that opens the finished profile.\n\nNotice the order. Parse happens before anything is created, so a bad file never leaves a half made profile behind.",
+      "file": "test_access_management/wizard/profile_upload.py",
+      "selection": {
+        "start": {
+          "line": 40,
+          "character": 1
+        },
+        "end": {
+          "line": 59,
+          "character": 10
+        }
+      }
+    },
+    {
+      "title": "Choosing the target",
+      "description": "This decides where the rows go. It returns a profile record, or an empty profile when a new one must be created.\n\nIf the wizard was opened from a profile, that profile is the target. If opened from a user, there are two choices. For a new profile, a name is required, and an empty record is returned as a signal to create later. For an existing one, a profile must be chosen, and it must really belong to this user.\n\nEach bad case raises a clear user error. The empty record trick works because an empty recordset is falsy, so the caller's or expression creates the profile only when needed.",
+      "file": "test_access_management/wizard/profile_upload.py",
+      "selection": {
+        "start": {
+          "line": 61,
+          "character": 1
+        },
+        "end": {
+          "line": 74,
+          "character": 31
+        }
+      }
+    },
+    {
+      "title": "Creating a new profile",
+      "description": "When the upload targets a new profile, this creates it with the typed name and links the user.\n\nThe tuple four and the user id is the older way to write link. It adds the user to the many to many without touching others. Because creating a profile with users triggers the sync, the user gets groups only after the rows are applied and the lines exist.",
+      "file": "test_access_management/wizard/profile_upload.py",
+      "selection": {
+        "start": {
+          "line": 76,
+          "character": 1
+        },
+        "end": {
+          "line": 80,
+          "character": 11
+        }
+      }
+    },
+    {
+      "title": "Checking the header",
+      "description": "Parse is the validation engine. It returns a pair: a list of error messages and a list of clean rows.\n\nFirst it reads the file. If reading fails for any reason, such as a file that is not really Excel, it returns one friendly error rather than a crash.\n\nThen it checks the header row. It finds missing columns, unexpected columns, and repeated column names. Any of these stops everything right away, because without a trustworthy header we cannot read the rows reliably.\n\nNotice the pattern: collect messages in a list, and return them together. The person sees every problem at once instead of fixing one and uploading again.",
+      "file": "test_access_management/wizard/profile_upload.py",
+      "selection": {
+        "start": {
+          "line": 82,
+          "character": 1
+        },
+        "end": {
+          "line": 98,
+          "character": 30
+        }
+      }
+    },
+    {
+      "title": "Walking the rows",
+      "description": "With a good header, it maps each column name to its position, so the order of columns in the file does not matter.\n\nIt loads every model name and id once, into a dictionary. That avoids a database search for every row, which would be slow on big files.\n\nThen for each row, it builds a dictionary of values by column name. Fully blank rows are skipped. Other rows are validated. Errors are added to the shared list. If the row is valid, it checks for a duplicate of the same name, model and group seen earlier in the file, and reports it with both row numbers. Otherwise the row is kept.",
+      "file": "test_access_management/wizard/profile_upload.py",
+      "selection": {
+        "start": {
+          "line": 100,
+          "character": 1
+        },
+        "end": {
+          "line": 120,
+          "character": 28
+        }
+      }
+    },
+    {
+      "title": "Cleaning cell values",
+      "description": "Two tiny helpers. Is blank says a cell is empty if it is None or only spaces. It is a static method, meaning it does not need the record, so it does not take self.\n\nText turns any cell into trimmed text, and empty cells into empty text. Excel can hand back numbers or other types, so converting to text first keeps the rest of the code simple.",
+      "file": "test_access_management/wizard/profile_upload.py",
+      "selection": {
+        "start": {
+          "line": 122,
+          "character": 1
+        },
+        "end": {
+          "line": 127,
+          "character": 67
+        }
+      }
+    },
+    {
+      "title": "Checking name and model",
+      "description": "Validate row checks one row and returns two things: a list of errors, and the clean values or None if there were errors.\n\nThe name is required. The model must be filled in, and must match a real model name from the dictionary. Different messages are given for missing and for unknown, and each message names the row and column, so the person can find the cell at once.",
+      "file": "test_access_management/wizard/profile_upload.py",
+      "selection": {
+        "start": {
+          "line": 129,
+          "character": 1
+        },
+        "end": {
+          "line": 145,
+          "character": 36
+        }
+      }
+    },
+    {
+      "title": "Checking the group",
+      "description": "The group cell is optional. When present it must be an external id, written as a module name, a dot, and a name. Env ref looks it up, with raise if not found off, so a missing one returns nothing instead of raising.\n\nIt also checks the record really is a group, because an external id could point at some other kind of record.\n\nA flag called group ok remembers whether the group was fine, so the kind check later does not pile on a second, confusing error.",
+      "file": "test_access_management/wizard/profile_upload.py",
+      "selection": {
+        "start": {
+          "line": 147,
+          "character": 1
+        },
+        "end": {
+          "line": 159,
+          "character": 36
+        }
+      }
+    },
+    {
+      "title": "Checking the flags",
+      "description": "The four columns create, read, update and delete must each be a real yes or no. A helper called to bool turns the cell into true, false or None. None means unreadable, and then an error names the row, the column and the bad value, and lists what is allowed.\n\nThe loop pairs each column heading with the field it feeds, so the same code handles all four.",
+      "file": "test_access_management/wizard/profile_upload.py",
+      "selection": {
+        "start": {
+          "line": 161,
+          "character": 1
+        },
+        "end": {
+          "line": 170,
+          "character": 31
+        }
+      }
+    },
+    {
+      "title": "Checking domain and kind",
+      "description": "If there is a domain and the model is known, the same domain error helper from the line model is called. This is the sharing we planned earlier. An empty domain is stored as false.\n\nThen the kind. It must be permission or restriction. And it must agree with the group: a row with a group must say permission, and a row without one must say restriction. This catches sheets where someone edited one column and forgot the other.\n\nAt the end, errors and values are returned. If any error exists, the values are None, so a bad row never reaches the database.",
+      "file": "test_access_management/wizard/profile_upload.py",
+      "selection": {
+        "start": {
+          "line": 172,
+          "character": 1
+        },
+        "end": {
+          "line": 191,
+          "character": 50
+        }
+      }
+    },
+    {
+      "title": "Reading yes and no",
+      "description": "This turns a cell into a boolean, or None when it cannot understand it.\n\nA real boolean passes straight through. A number is accepted only if it is zero or one. A string is trimmed, lowercased, and compared with the true words and false words defined at the top. Anything else gives None.\n\nExcel is messy about booleans. Sometimes a cell holds true, sometimes the number one, sometimes the word yes. This function accepts all the friendly forms.",
+      "file": "test_access_management/wizard/profile_upload.py",
+      "selection": {
+        "start": {
+          "line": 193,
+          "character": 1
+        },
+        "end": {
+          "line": 205,
+          "character": 20
+        }
+      }
+    },
+    {
+      "title": "Applying the rows",
+      "description": "Only clean rows get here. This decides whether each row is an update or a new line.\n\nIt builds a dictionary of the profile's existing lines keyed by name, model and group, the identity trio from the line model. For each row, if the key exists, it compares the other fields and keeps only those that really changed. If something changed, it queues an update command, one with the line id and the changes. If nothing changed, it does nothing at all. If the key is new, it queues a create command.\n\nAt the end one single write sends all commands to the profile. That single write triggers the sync once, and every user of the profile gets the right groups.\n\nBecause unchanged lines are left alone, uploading a file you just exported changes nothing, not even the last modified date. The round trip test checks exactly that.",
+      "file": "test_access_management/wizard/profile_upload.py",
+      "selection": {
+        "start": {
+          "line": 207,
+          "character": 1
+        },
+        "end": {
+          "line": 226,
+          "character": 50
+        }
+      }
+    },
+    {
+      "title": "Wizard screen",
+      "description": "This is the popup form. Visibility rules use the Odoo twenty style, where invisible takes a plain expression, instead of an old domain list.\n\nWhen opened from a profile, only a read only profile field shows. When opened from a user, a radio choice appears, then either a profile picker, limited to this user's profiles by a domain, or a box for the new profile name. Required rules follow the same conditions.\n\nThen the file field, with the filename tied to it, and the error text, shown only when it is not empty. The footer holds the Upload button, which calls the upload method, and Cancel.",
+      "file": "test_access_management/wizard/profile_upload_views.xml",
+      "selection": {
+        "start": {
+          "line": 3,
+          "character": 1
+        },
+        "end": {
+          "line": 31,
+          "character": 8
+        }
+      }
+    },
+    {
+      "title": "Profile screens",
+      "description": "Here are the screens for profiles. The list shows name and users as small tags. Active is there but hidden, so the search filter can use it.\n\nThe form has two buttons in the header, shown only once the record is saved, because there is no id before that and nothing to export. There is a red Archived ribbon shown when active is false.\n\nA notebook has two tabs. Access Lines shows the lines as an editable list, where you click a row and type, and Users lists the users of the profile.\n\nNote the list uses editable bottom, which makes rows editable in place and adds new ones at the bottom.",
+      "file": "test_access_management/views/access_profile_views.xml",
+      "selection": {
+        "start": {
+          "line": 3,
+          "character": 1
+        },
+        "end": {
+          "line": 56,
+          "character": 14
+        }
+      }
+    },
+    {
+      "title": "Search and action",
+      "description": "The search view lets you search by name or by user, and adds an Archived filter.\n\nThe action is the glue between a menu and the screens. It says open this model, first as a list, and the form when a row is clicked.",
+      "file": "test_access_management/views/access_profile_views.xml",
+      "selection": {
+        "start": {
+          "line": 58,
+          "character": 1
+        },
+        "end": {
+          "line": 74,
+          "character": 14
+        }
+      }
+    },
+    {
+      "title": "User screen",
+      "description": "This view extends the standard user form, which comes from the base module. An xpath finds the existing Access Rights tab and adds a new tab after it.\n\nThe new tab is limited to administrators. It has the two buttons, the profile tags field, and below it the combined, read only table of all lines from all the profiles.\n\nThis is how an administrator can assign a whole profile to a person without leaving the user screen.",
+      "file": "test_access_management/views/res_users_views.xml",
+      "selection": {
+        "start": {
+          "line": 3,
+          "character": 1
+        },
+        "end": {
+          "line": 35,
+          "character": 14
+        }
+      }
+    },
+    {
+      "title": "Menus",
+      "description": "Two menu items. The root item makes an entry on the home screen, and the child item opens the profile list through the action.\n\nBoth carry the administrator group, so other users do not see them. The sequence numbers decide the order among the other apps.",
+      "file": "test_access_management/views/menus.xml",
+      "selection": {
+        "start": {
+          "line": 1,
+          "character": 1
+        },
+        "end": {
+          "line": 14,
+          "character": 8
+        }
+      }
+    },
+    {
+      "title": "Sync tests",
+      "description": "Tests prove the module does what it claims. This file checks the sync.\n\nSet up creates a user and two profiles. One has a single group, the other has two. Each test then walks one situation.\n\nAdding a profile grants its groups. Removing one profile keeps a group that the other profile still needs, while dropping the one that nobody needs. A group given by hand survives the removal of the profile. Changing lines recalculates users. Deleting a profile revokes its groups. And the combined lines equal both profiles lines joined.\n\nTogether these are a map of the rules the sync promises to keep.",
+      "file": "test_access_management/tests/test_profile_sync.py",
+      "selection": {
+        "start": {
+          "line": 1,
+          "character": 1
+        },
+        "end": {
+          "line": 65,
+          "character": 10
+        }
+      }
+    },
+    {
+      "title": "Sheet tests",
+      "description": "This file tests the spreadsheet round trip.\n\nFirst, exporting and uploading the same data changes nothing, not even the write dates. Second, an edited row is updated and a new row is created. Third, a file full of mistakes gives one report listing every problem with its row and column, and saves nothing. Fourth, wrong headers are reported. Fifth, uploading for a user into a new profile creates the profile and grants the group.",
+      "file": "test_access_management/tests/test_xlsx_roundtrip.py",
+      "selection": {
+        "start": {
+          "line": 1,
+          "character": 1
+        },
+        "end": {
+          "line": 92,
+          "character": 50
+        }
+      }
+    },
+    {
+      "title": "Download tests",
+      "description": "The last tests use a real web request. The first uploads the sample file shipped in the static folder, then downloads the export and checks the header and the row count.\n\nThe second logs in as an ordinary user and tries the export link. It must get a four zero three. That proves the administrator guard in the controller works.",
+      "file": "test_access_management/tests/test_export_controller.py",
+      "selection": {
+        "start": {
+          "line": 1,
+          "character": 1
+        },
+        "end": {
+          "line": 39,
+          "character": 52
+        }
+      }
+    },
+    {
+      "title": "How it fits together",
+      "description": "Let us put the whole story together.\n\nAn administrator creates a profile and adds lines, each naming a model and, for permissions, a group. They put the profile on users. Every path that can change this, from the profile, its lines or the user, ends at one method, the sync. The sync compares what each user needs with what they hold, and uses the ledger to remember who gave what, so it never removes a group that was given by hand or that another profile still needs.\n\nThe same lines can leave as an Excel file through the controller, and come back through the upload wizard. The wizard checks everything first, reports every problem together, and saves nothing unless the file is clean.\n\nThings to try. Install the module and create a profile with two lines. Add it to a user and look at that user's groups. Archive the profile and watch the groups disappear. Export it, change a cell, and upload it again. Then try breaking a cell on purpose and read the error report."
+    }
+  ]
+}

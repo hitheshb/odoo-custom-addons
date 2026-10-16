@@ -1,0 +1,488 @@
+{
+  "$schema": "https://aka.ms/codetour-schema",
+  "title": "Access Management phase one",
+  "steps": [
+    {
+      "title": "The goal",
+      "description": "We are building the Access Management module for Odoo twenty.\n\nAn access profile is a named package. Inside it sit a list of users and a list of access lines. Each line is one row of an Excel file. It says which group may do what on which model.\n\nProfiles do not enforce anything themselves. Odoo keeps enforcing access through groups, as usual. The module only hands the right groups to the right users, and takes them back when they are no longer needed.\n\nThis tour grows after every step. Right now it covers the manifest, the package files, the profile model and the profile line model. Listen to it in order."
+    },
+    {
+      "title": "The manifest",
+      "description": "This file is the label on the box. When you install or refresh apps, Odoo reads this file first, before anything else. It is one Python dictionary. A dictionary is a set of key and value pairs.\n\nName is the title shown in the Apps list. Version starts with twenty point zero, the Odoo version, then our own module version. Summary is the one line description. Category groups the module in the Apps list.\n\nThe file must contain only plain values, because Odoo reads it as data and does not run it as code.",
+      "file": "access_management/__manifest__.py",
+      "selection": {
+        "start": {
+          "line": 1,
+          "character": 1
+        },
+        "end": {
+          "line": 16,
+          "character": 2
+        }
+      }
+    },
+    {
+      "title": "Depends and data",
+      "description": "Depends is a list of modules that must be installed first. We need base, because base holds the user model and the group model. Odoo installs the dependencies before our module.\n\nData is a list of files Odoo loads at install time, such as security files, views and menus. It now holds the security file the views file and the menus file. The order matters. Security first, then views, then menus.\n\nApplication true makes the module appear as its own app. Installable true means it can be installed. That one is the default anyway. License is LGPL three, the same as your other modules.",
+      "file": "access_management/__manifest__.py",
+      "selection": {
+        "start": {
+          "line": 6,
+          "character": 5
+        },
+        "end": {
+          "line": 15,
+          "character": 25
+        }
+      }
+    },
+    {
+      "title": "The package file",
+      "description": "This file is the table of contents for Python. It says look inside the models folder.\n\nFrom, then a dot, then import models. The dot means this same folder. A folder only counts as a Python package when it holds an init file like this one.\n\nThis is important. Odoo only sees Python code that something imports. If you write a model file and forget to import it, Odoo silently ignores it. That is the most common beginner mistake.",
+      "file": "access_management/__init__.py",
+      "selection": {
+        "start": {
+          "line": 1,
+          "character": 1
+        },
+        "end": {
+          "line": 1,
+          "character": 21
+        }
+      }
+    },
+    {
+      "title": "Importing the models",
+      "description": "This init file lists every model file in the models folder. One import line per file.\n\nWe add a line only after its file exists. Importing a file that does not exist raises a module not found error, and Odoo refuses to load the whole module.\n\nThe order matters a little. Odoo loads all the model classes first, then builds the tables and checks the links between them. So a model can point to another model that is imported later in the list.",
+      "file": "access_management/models/__init__.py",
+      "selection": {
+        "start": {
+          "line": 1,
+          "character": 1
+        },
+        "end": {
+          "line": 2,
+          "character": 34
+        }
+      }
+    },
+    {
+      "title": "Checkpoint: package files done",
+      "description": "Done so far. The manifest and the package files, which tell Odoo what the module is and which Python files to load.\n\nNext. The profile model, the blueprint for an access profile."
+    },
+    {
+      "title": "Two toolboxes",
+      "description": "This line brings in two toolboxes from Odoo. Models gives the base classes. Fields gives the column types.\n\nWithout these imports, Python would not know what a model or a field is.",
+      "file": "access_management/models/access_profile.py",
+      "selection": {
+        "start": {
+          "line": 1,
+          "character": 1
+        },
+        "end": {
+          "line": 1,
+          "character": 32
+        }
+      }
+    },
+    {
+      "title": "The class",
+      "description": "This is a Python class. It inherits from models dot Model. Inherit means the new class starts with everything the parent has. Here that means all the ORM powers for free. It can create, search, write and delete records without us writing any of that code.\n\nOdoo reads this class and builds a database table from it. Each field becomes a column. Each saved record becomes a row.",
+      "file": "access_management/models/access_profile.py",
+      "selection": {
+        "start": {
+          "line": 4,
+          "character": 1
+        },
+        "end": {
+          "line": 4,
+          "character": 35
+        }
+      }
+    },
+    {
+      "title": "Name, description and order",
+      "description": "Underscore name is important. It is the technical ID of the model. The table name is this text with dots turned into underscores, so access dot profile becomes access underscore profile. Other models refer to this model with this exact text.\n\nUnderscore description is the human name. It appears in error messages and on the screen. Odoo warns if it is missing.\n\nUnderscore order says records are sorted by name by default. It is a plain string.",
+      "file": "access_management/models/access_profile.py",
+      "selection": {
+        "start": {
+          "line": 5,
+          "character": 5
+        },
+        "end": {
+          "line": 7,
+          "character": 20
+        }
+      }
+    },
+    {
+      "title": "Name and active",
+      "description": "Name is a short text column. Required true means you cannot save a profile without a name.\n\nActive is special in Odoo. A field called exactly active switches on archiving. Unticking it hides the record from lists without deleting it. Default true means new profiles start active.\n\nA default is the value a new record gets before the user types anything.",
+      "file": "access_management/models/access_profile.py",
+      "selection": {
+        "start": {
+          "line": 9,
+          "character": 5
+        },
+        "end": {
+          "line": 10,
+          "character": 42
+        }
+      }
+    },
+    {
+      "title": "Users of the profile",
+      "description": "This field links many profiles to many users. Its value is a recordset of users. A recordset is a collection of records, even when it holds zero or one item. For example it can hold users two and seven. You loop over it with a for loop, and mapped name gives a plain list of names.\n\nThe first argument is the target model. Relation is the name of the middle table that stores the pairs. Column one holds this model's ID. Column two holds the other model's ID. String is the label on the screen.\n\nThe middle table has one row per link and no other data. We name it on purpose. In phase two the user model gets the mirror field. Both sides must share the same table, with the two columns swapped, or the two sides drift apart.",
+      "file": "access_management/models/access_profile.py",
+      "selection": {
+        "start": {
+          "line": 11,
+          "character": 5
+        },
+        "end": {
+          "line": 17,
+          "character": 6
+        }
+      }
+    },
+    {
+      "title": "Lines of the profile",
+      "description": "This field is the list of lines that belong to this profile. Its value is also a recordset. The first argument is the line model. The second is the name of the Many2one field on the line that points back here.\n\nOne2many is not a real column. It is a view of the Many2one on the other model. The real column called profile id lives on the line table. That is why the line model had to be built next.\n\nMany2many versus One2many. With Many2many, both sides can have many, like users and profiles. With One2many, the many side points back with a Many2one, like lines and their one profile.",
+      "file": "access_management/models/access_profile.py",
+      "selection": {
+        "start": {
+          "line": 18,
+          "character": 5
+        },
+        "end": {
+          "line": 22,
+          "character": 6
+        }
+      }
+    },
+    {
+      "title": "Checkpoint: profile model done",
+      "description": "Done so far. The manifest, the package files and the profile model with its name, active flag, users and lines.\n\nNext. The profile line model, which the profile's lines field points to."
+    },
+    {
+      "title": "The line model header",
+      "description": "Same pattern as the profile. Imports first. We now also import api, which gives us decorators, and ValidationError, which is the error you raise when a user saves bad data.\n\nThe class is called access profile line. Its technical name is access dot profile dot line, and its table is access underscore profile underscore line.\n\nOrder sorts by profile, then model, then group, then ID. It is a string of field names separated by commas.",
+      "file": "access_management/models/access_profile_line.py",
+      "selection": {
+        "start": {
+          "line": 1,
+          "character": 1
+        },
+        "end": {
+          "line": 8,
+          "character": 50
+        }
+      }
+    },
+    {
+      "title": "Link to the profile",
+      "description": "This is a Many2one. It links each line to exactly one profile. Its value is a single record, or empty. This is the real column that the profile's line ids field looks at.\n\nRequired true means a line cannot exist without a profile. Ondelete cascade means that when a profile is deleted, its lines are deleted with it. Otherwise they would be orphans. Index true builds a database index, so finding all lines of a profile is fast.",
+      "file": "access_management/models/access_profile_line.py",
+      "selection": {
+        "start": {
+          "line": 10,
+          "character": 5
+        },
+        "end": {
+          "line": 16,
+          "character": 6
+        }
+      }
+    },
+    {
+      "title": "Name",
+      "description": "A required short text label for the line. It is the first part of the key we use later to match rows when uploading a file. The key is Name plus Model plus Group.",
+      "file": "access_management/models/access_profile_line.py",
+      "selection": {
+        "start": {
+          "line": 17,
+          "character": 5
+        },
+        "end": {
+          "line": 17,
+          "character": 38
+        }
+      }
+    },
+    {
+      "title": "Model and group",
+      "description": "Model links to ir dot model. That is the table where Odoo stores the list of all models. We store a link, not typed text. The technical name, like account dot account, is model id dot model. That is what the Excel Model column will hold.\n\nGroup links to res dot groups. It is not required. A line without a group is a restriction line, and it will not give any group to users.\n\nBoth use ondelete cascade. If the model or group is removed from the system, the line goes with it, just as ir dot access rows do.",
+      "file": "access_management/models/access_profile_line.py",
+      "selection": {
+        "start": {
+          "line": 18,
+          "character": 5
+        },
+        "end": {
+          "line": 28,
+          "character": 6
+        }
+      }
+    },
+    {
+      "title": "Permissions",
+      "description": "Four ticks that match the four operations of the core ir dot access model. Create, Read, Update and Delete. Each is a boolean, true or false.\n\nThe names are for create, for read, for write and for unlink. Odoo uses write for update and unlink for delete internally. The string is the label the user sees.\n\nRead is ticked by default, so a new line is never empty. The core model does the same, by falling back to read only.\n\nNote that ir dot access stores these as one text like c r u d. We keep four simple ticks because they map straight to the four Excel columns.",
+      "file": "access_management/models/access_profile_line.py",
+      "selection": {
+        "start": {
+          "line": 29,
+          "character": 5
+        },
+        "end": {
+          "line": 32,
+          "character": 49
+        }
+      }
+    },
+    {
+      "title": "Domain",
+      "description": "A text column. It holds a domain filter, such as a list with a condition inside. It restricts the rule to records that match. Empty means no filter.\n\nIt is a plain string for now. We check that it is valid in phase four, when we read the Excel file.",
+      "file": "access_management/models/access_profile_line.py",
+      "selection": {
+        "start": {
+          "line": 33,
+          "character": 5
+        },
+        "end": {
+          "line": 33,
+          "character": 27
+        }
+      }
+    },
+    {
+      "title": "Kind, a computed field",
+      "description": "Kind is a Selection. That is a dropdown limited to a fixed list of pairs. Each pair is the stored value and the label shown. The values are permission and restriction. These are the real values of the kind field in your ir dot access source.\n\nCompute names the method that works out the value. Nobody types it. Store true saves the result in the database, so we can search, group and export it easily. Without store, the value is recalculated each time and is harder to search.",
+      "file": "access_management/models/access_profile_line.py",
+      "selection": {
+        "start": {
+          "line": 34,
+          "character": 5
+        },
+        "end": {
+          "line": 38,
+          "character": 6
+        }
+      }
+    },
+    {
+      "title": "The compute method",
+      "description": "The decorator api depends says: rerun this method whenever group id changes. It is important. If you forget it, the stored value goes stale.\n\nSelf is a recordset that can hold many lines, so we loop. The loop variable line is one record. The method returns nothing, meaning None. It works by assigning to line dot kind.\n\nThe last line is a Python one line if else. If the line has a group, kind is permission. Otherwise it is restriction. A record with no value in a Many2one counts as false.\n\nCompute versus onchange. A compute runs on the server every time the data changes, even from code or import. An onchange runs only while someone edits a form on screen. Use compute for derived values.",
+      "file": "access_management/models/access_profile_line.py",
+      "selection": {
+        "start": {
+          "line": 40,
+          "character": 5
+        },
+        "end": {
+          "line": 43,
+          "character": 73
+        }
+      }
+    },
+    {
+      "title": "The uniqueness check",
+      "description": "The decorator api constrains runs this method after a create or a write that touches any of the listed fields. If it raises an error, the whole save is undone and the user sees the message. The method returns None. Its only output is the error.\n\nSearch count returns an integer, the number of records matching a domain. A domain is a list of tuples. Each tuple is a field, an operator and a value. All the tuples must match.\n\nWe exclude the line itself by ID. Then we look for another line in the same profile with the same name, model and group. Searching group equals false correctly finds lines with an empty group.\n\nThis enforces the upload key. The database's own unique rule would not work here, because an empty group counts as different every time.\n\nIn Odoo twenty the translation function is self dot env dot underscore, not the old imported underscore function.",
+      "file": "access_management/models/access_profile_line.py",
+      "selection": {
+        "start": {
+          "line": 45,
+          "character": 5
+        },
+        "end": {
+          "line": 58,
+          "character": 19
+        }
+      }
+    },
+    {
+      "title": "Checkpoint: line model done",
+      "description": "Done so far. The manifest, the package files, the profile model and the line model with its computed kind and its uniqueness check.\n\nNext. Security, so only administrators can use these models."
+    },
+    {
+      "title": "The security file header",
+      "description": "This file decides who may use our two models. Odoo twenty replaced the old file called ir dot model dot access dot csv with this one, called ir dot access dot csv. It is a plain comma separated file. The first row names the columns.\n\nID is a unique name for the row. Name is a label. Model id is the technical name of the model. In the old format this column held an external ID, now it holds the model name directly. Group id slash id is the group that gets the right, written as an external ID. Operation is which actions are allowed. Domain is an optional filter, empty here.",
+      "file": "access_management/security/ir.access.csv",
+      "selection": {
+        "start": {
+          "line": 1,
+          "character": 1
+        },
+        "end": {
+          "line": 1,
+          "character": 46
+        }
+      }
+    },
+    {
+      "title": "Administrators only",
+      "description": "Each row gives one group a set of rights on one model. We have two rows, one for the profile model and one for the line model.\n\nThe group is base dot group system. That is the Administration Settings group, the administrators. Nobody else gets any right. In Odoo, no row for a group means no access at all. So normal users cannot even read our profiles.\n\nOperation is c r u d. That means create, read, update and delete. Note that update is the letter u, not w. The letters always come in this order.\n\nThis is our first layer of security. The next layers are the buttons and menus hidden from other users, and checks inside the Python methods that raise an access error. Hiding a button alone is never real security, because a clever user can still call the method.",
+      "file": "access_management/security/ir.access.csv",
+      "selection": {
+        "start": {
+          "line": 2,
+          "character": 1
+        },
+        "end": {
+          "line": 3,
+          "character": 103
+        }
+      }
+    },
+    {
+      "title": "Checkpoint: security done",
+      "description": "Done so far. The manifest, the package files, both models and the administrators only security file.\n\nNext. The screens, meaning the list, form and search views and the action that opens them."
+    },
+    {
+      "title": "The views file",
+      "description": "A view is an XML description of a screen. Odoo reads it and draws the screen in the browser. The file starts with the xml declaration and then a root tag called odoo. Everything inside is a list of records.\n\nEach record creates one row in a database table. Most of ours create rows in the table of views. The last one creates an action. Odoo twenty needs no data tag inside odoo any more. Records go straight in the root.",
+      "file": "access_management/views/access_profile_views.xml",
+      "selection": {
+        "start": {
+          "line": 1,
+          "character": 1
+        },
+        "end": {
+          "line": 2,
+          "character": 7
+        }
+      }
+    },
+    {
+      "title": "The list view",
+      "description": "This record creates the list view. Model tells Odoo which model it is for. The arch field holds the screen layout as XML.\n\nIn Odoo twenty the list tag is called list. Older versions called it tree. Inside are the columns to show.\n\nName is the profile name. User ids uses the many2many tags widget, which shows each user as a small tag. The active column is there but hidden with column invisible. Odoo needs the field loaded even when you do not show it.",
+      "file": "access_management/views/access_profile_views.xml",
+      "selection": {
+        "start": {
+          "line": 3,
+          "character": 5
+        },
+        "end": {
+          "line": 13,
+          "character": 14
+        }
+      }
+    },
+    {
+      "title": "Form title and archive ribbon",
+      "description": "This is the start of the form view. The sheet tag gives the white paper look.\n\nThe web ribbon widget shows a red Archived banner. Invisible active means hide it while the record is active. Since Odoo seventeen you write conditions directly like this. The old attrs syntax is gone.\n\nThe active field is loaded but hidden so the ribbon condition can read it. The title block puts the name in a big heading with a placeholder hint.",
+      "file": "access_management/views/access_profile_views.xml",
+      "selection": {
+        "start": {
+          "line": 21,
+          "character": 21
+        },
+        "end": {
+          "line": 28,
+          "character": 27
+        }
+      }
+    },
+    {
+      "title": "Access lines tab",
+      "description": "A notebook is a set of tabs and each page is one tab. This first tab shows the line ids field, the profile's lines.\n\nInside it we define the list used for the lines. Editable bottom means you edit rows right in the list, and a new row is added at the bottom. So the admin can add and change rule lines without opening another form.\n\nWe show all line columns. The kind column is computed, so it is read only automatically.",
+      "file": "access_management/views/access_profile_views.xml",
+      "selection": {
+        "start": {
+          "line": 30,
+          "character": 25
+        },
+        "end": {
+          "line": 44,
+          "character": 32
+        }
+      }
+    },
+    {
+      "title": "Users tab",
+      "description": "The second tab shows the user ids field. With no widget given, Odoo shows the users in a list with an Add button and a remove cross. That is how the admin adds and removes users from the profile. It is the second feature from your requirements.",
+      "file": "access_management/views/access_profile_views.xml",
+      "selection": {
+        "start": {
+          "line": 45,
+          "character": 25
+        },
+        "end": {
+          "line": 47,
+          "character": 32
+        }
+      }
+    },
+    {
+      "title": "Search view",
+      "description": "The search view controls the search box and the filters. Searching by name or by user works. The filter has a domain, a list of conditions, that shows only archived profiles. Archived records are hidden by default because of the active field.",
+      "file": "access_management/views/access_profile_views.xml",
+      "selection": {
+        "start": {
+          "line": 54,
+          "character": 5
+        },
+        "end": {
+          "line": 64,
+          "character": 14
+        }
+      }
+    },
+    {
+      "title": "The action",
+      "description": "An action tells Odoo what to open when a menu is clicked. This one is a window action. Res model is the model to show. View mode lists the view types in order, list first then form.\n\nThe action exists but nothing points to it yet. The menu file in the next step will.",
+      "file": "access_management/views/access_profile_views.xml",
+      "selection": {
+        "start": {
+          "line": 66,
+          "character": 5
+        },
+        "end": {
+          "line": 70,
+          "character": 14
+        }
+      }
+    },
+    {
+      "title": "Checkpoint: views done",
+      "description": "Done so far. The manifest, the package files, both models, the security file, and the views with the action.\n\nNext. The menu, then we install the module and create your first profile."
+    },
+    {
+      "title": "The top menu",
+      "description": "A menuitem tag creates one menu entry. ID is its unique name. Name is the text shown. Sequence sets the position among its siblings, lower comes first.\n\nThis first one has no parent, so it becomes a top level app in the main menu. It has no action, it is only a container.\n\nGroups base dot group system is important. It hides the menu from everyone except administrators. This only hides it. The real protection is the security file, because a hidden menu can still be reached by a direct link.",
+      "file": "access_management/views/menus.xml",
+      "selection": {
+        "start": {
+          "line": 3,
+          "character": 5
+        },
+        "end": {
+          "line": 6,
+          "character": 43
+        }
+      }
+    },
+    {
+      "title": "The profiles menu",
+      "description": "This second menuitem sits inside the first one. Parent points to the top menu by its ID. Action points to the window action we made in the views file. Clicking this menu opens the profile list.\n\nNotice the order in the manifest. The views file is loaded before the menus file, because the menu refers to the action by its ID and that ID must already exist.",
+      "file": "access_management/views/menus.xml",
+      "selection": {
+        "start": {
+          "line": 8,
+          "character": 5
+        },
+        "end": {
+          "line": 13,
+          "character": 43
+        }
+      }
+    },
+    {
+      "title": "Checkpoint: menus done",
+      "description": "Done so far. All of phase one is written. The manifest, package files, both models, security, views and menus.\n\nNext. Install the module and test it. In a terminal go to the odoo folder inside odoo twenty and activate the virtual environment. Then run python odoo dash bin, dash c odoo dot conf, dash d odoo twenty, dash i access management. Open the app as the admin. Create a profile named Accountant, add one line and one user, save it, then archive it. Then check that a normal user does not see the menu."
+    },
+    {
+      "title": "Phase one wrap up",
+      "description": "Phase one is finished and installed. You have a working Access Profiles screen. Only administrators can open it. A profile has a name, an archive switch, a list of users and a list of access lines. Each line is checked for duplicates and works out its own kind.\n\nNothing is enforced yet. Adding a user to a profile does not give them any group. That is phase two.\n\nPhase two has its own tour, called Access Management phase two. Open it from the tours list and continue there."
+    }
+  ]
+}

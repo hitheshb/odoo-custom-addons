@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="work_update_list_view" model="ir.ui.view">
+        <field name="name">user.work.update.list</field>
+        <field name="model">user.work.update</field>
+        <field name="arch" type="xml">
+            <list create="false" edit="false" delete="false" decoration-muted="skipped">
+                <field name="date"/>
+                <field name="user_id" widget="many2one_avatar_user"/>
+                <field name="text"/>
+                <field name="skipped" widget="boolean_toggle"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="work_update_search_view" model="ir.ui.view">
+        <field name="name">user.work.update.search</field>
+        <field name="model">user.work.update</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="user_id"/>
+                <field name="text"/>
+                <filter name="today" string="Today" domain="[('date', '&gt;=', context_today().strftime('%Y-%m-%d'))]"/>
+                <filter name="answered" string="Answered" domain="[('skipped', '=', False)]"/>
+                <filter name="skipped" string="Skipped" domain="[('skipped', '=', True)]"/>
+                <group>
+                    <filter name="group_user" string="User" context="{'group_by': 'user_id'}"/>
+                    <filter name="group_day" string="Day" context="{'group_by': 'date:day'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="work_update_action" model="ir.actions.act_window">
+        <field name="name">Work Updates</field>
+        <field name="res_model">user.work.update</field>
+        <field name="view_mode">list</field>
+        <field name="search_view_id" ref="work_update_search_view"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No work updates yet</p>
+            <p>Users are asked every few hours what they are working on; their answers appear here.</p>
+        </field>
+    </record>
+</odoo>

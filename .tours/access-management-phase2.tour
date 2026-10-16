@@ -1,0 +1,251 @@
+{
+  "$schema": "https://aka.ms/codetour-schema",
+  "title": "Access Management phase two",
+  "steps": [
+    {
+      "title": "Phase two: connecting users and profiles",
+      "description": "Phase one gave us profiles and lines, but users and profiles are not connected from the user side yet. Phase two builds the two way link and the group syncing.\n\nThe plan in small steps. One, add the profiles field on the user model. Two, show it on the user form. Three, a hidden ledger that remembers which group came from which profile. Four, the syncing logic that adds and removes groups. Five, the triggers that run the sync when things change. Six, the combined access lines on the user form. Then tests.\n\nWe start with step one."
+    },
+    {
+      "title": "Extending the user model",
+      "description": "This file does not create a new model. It extends an existing one. That is the meaning of underscore inherit. We name the model to extend, res dot users, and Odoo adds our field to it. This is called extension inheritance. We never edit Odoo core files.\n\nThe class name can be anything. What matters is underscore inherit. There is no underscore name here. If we gave one, Odoo would create a brand new model instead.\n\nThis is different from a class that inherits models dot Model. That one makes a new table. This one adds columns to an existing table.",
+      "file": "access_management/models/res_users.py",
+      "selection": {
+        "start": {
+          "line": 1,
+          "character": 1
+        },
+        "end": {
+          "line": 5,
+          "character": 27
+        }
+      }
+    },
+    {
+      "title": "The mirror field",
+      "description": "This is the other side of the link we made on the profile. Profile ids on the user gives the profiles of that user. Its value is a recordset of profiles.\n\nLook at the table and columns. Relation is the same middle table as before, access profile user rel. Column one is now user id and column two is profile id. They are swapped compared with the profile side. That is what makes both fields read the same rows. Add a user in the profile and the same row shows up here.\n\nGroups base dot group system is important. It hides this field from everyone except administrators. Other users cannot read it or write it, even from code that does not use sudo.",
+      "file": "access_management/models/res_users.py",
+      "selection": {
+        "start": {
+          "line": 7,
+          "character": 5
+        },
+        "end": {
+          "line": 14,
+          "character": 6
+        }
+      }
+    },
+    {
+      "title": "Checkpoint: user field added",
+      "description": "Done so far. Phase one is complete and installed. In phase two we have added the profile ids field on the user model, sharing the middle table with the profile.\n\nNext. Show this field on the user form, so the admin can add and remove profiles from there. After you upgrade the module, the field exists in the database."
+    },
+    {
+      "title": "Extending a view",
+      "description": "We extend the user form the same way we extended the user model. The record has an inherit id that points to the original view, base dot view users form. Ref means look up the record by its external ID.\n\nThe arch does not repeat the whole form. It only says what to change. Odoo applies our changes on top of the original form every time it draws it. We never edit the core file.",
+      "file": "access_management/views/res_users_views.xml",
+      "selection": {
+        "start": {
+          "line": 3,
+          "character": 5
+        },
+        "end": {
+          "line": 8,
+          "character": 74
+        }
+      }
+    },
+    {
+      "title": "The xpath",
+      "description": "Xpath is a way to find a spot in the original form. The expression says find the page whose name is access rights. Position after means put our content right after it. Other positions are before, inside, replace and attributes.\n\nThe new page is a tab called Access Profiles. Groups base dot group system hides the whole tab from everyone except administrators. Inside is the profile ids field shown with the many to many tags widget. Each profile appears as a small tag. The admin clicks to add a profile and the cross on a tag to remove it.\n\nThe field returns nothing to the screen by itself. It is only the two way link. Adding a profile here writes a row in the middle table, the same row the profile form shows in its Users tab.",
+      "file": "access_management/views/res_users_views.xml",
+      "selection": {
+        "start": {
+          "line": 9,
+          "character": 17
+        },
+        "end": {
+          "line": 13,
+          "character": 17
+        }
+      }
+    },
+    {
+      "title": "Checkpoint: user form done",
+      "description": "Done so far. The profiles field on the user model, and a new Access Profiles tab on the user form. The admin can now add and remove profiles from the user side, and users from the profile side.\n\nNext. The hidden ledger model. It will remember which group was given by which profile, so we never remove a group the user got some other way.\n\nTo try it, upgrade the module, open a user in Settings, and look for the new tab. Adding a profile will not give any group yet."
+    },
+    {
+      "title": "The ledger idea",
+      "description": "Think of a notebook the module keeps. Every time a profile hands a group to a user, the module writes one line in the notebook. One line says this profile gave this group to this user.\n\nWhy do we need it? A user can hold a group for two reasons. An admin ticked it by hand, or a profile gave it. When a profile is removed, we must take back only what the profile gave. Without the notebook we could not tell the two apart, and we might remove a group the admin gave on purpose.\n\nThis model is that notebook. It holds data only. It has no screen.",
+      "file": "access_management/models/access_profile_grant.py",
+      "selection": {
+        "start": {
+          "line": 4,
+          "character": 1
+        },
+        "end": {
+          "line": 6,
+          "character": 66
+        }
+      }
+    },
+    {
+      "title": "Three links",
+      "description": "User id, group id and profile id are three Many2one fields. Each line of the ledger points to one user, one group and one profile. Together they say who got what from whom.\n\nAll three are required, so a line is never half empty. All three use ondelete cascade. If the user, the group or the profile is deleted, the ledger lines about it disappear too, so the notebook never keeps stale lines.\n\nIndex true builds a database index on each. The sync logic will search by user, by group and by profile very often.",
+      "file": "access_management/models/access_profile_grant.py",
+      "selection": {
+        "start": {
+          "line": 8,
+          "character": 5
+        },
+        "end": {
+          "line": 25,
+          "character": 6
+        }
+      }
+    },
+    {
+      "title": "Was manual",
+      "description": "Was manual is a boolean. It means the user already had this group before any profile granted it. In that case the group came from outside and the module must never remove it.\n\nThe help text is shown as a tooltip when you hover the field in a technical view.\n\nImportant. This one flag is how the module keeps your rule. Groups received outside any profile must never be removed.",
+      "file": "access_management/models/access_profile_grant.py",
+      "selection": {
+        "start": {
+          "line": 26,
+          "character": 5
+        },
+        "end": {
+          "line": 28,
+          "character": 6
+        }
+      }
+    },
+    {
+      "title": "One line per combination",
+      "description": "This is an SQL constraint. In Odoo twenty you write it as a class attribute using models dot Constraint. The first argument is the SQL rule. Unique on user, group and profile means the same combination can be stored only once. The second argument is the error message.\n\nOlder versions used a list called underscore sql underscore constraints with tuples. That list style is replaced in Odoo twenty.\n\nThe database itself enforces this rule, so even code that skips the Python checks cannot create a duplicate.",
+      "file": "access_management/models/access_profile_grant.py",
+      "selection": {
+        "start": {
+          "line": 30,
+          "character": 5
+        },
+        "end": {
+          "line": 33,
+          "character": 6
+        }
+      }
+    },
+    {
+      "title": "Security for the ledger",
+      "description": "A third row in the security file gives administrators full rights on the ledger model. Without a row, even the module code could be blocked when it runs as an ordinary user. The ledger has no menu, so only code and technical views reach it.",
+      "file": "access_management/security/ir.access.csv",
+      "selection": {
+        "start": {
+          "line": 4,
+          "character": 1
+        },
+        "end": {
+          "line": 4,
+          "character": 106
+        }
+      }
+    },
+    {
+      "title": "Checkpoint: ledger done",
+      "description": "Done so far. The profiles field on the user, the profiles tab on the user form, and the hidden ledger model with its security row.\n\nNext. The sync logic. A method that looks at the user's profiles, works out which groups are needed, adds the missing ones, writes the ledger, and removes a group only when no other profile needs it and it was not manual.\n\nTo see the ledger table, restart with minus u. Nothing is written to it yet."
+    },
+    {
+      "title": "The sync method",
+      "description": "This is the heart of phase two. The method is on the user model and its job is simple. Make the user's groups match the user's profiles.\n\nThe name starts with an underscore. That is an Odoo habit that means private, only meant to be called from code, not from the screen.\n\nSelf is a recordset of users, maybe one, maybe many. We loop over it. The first line gets the ledger model with sudo. Sudo means run with full rights, ignoring access rules. The module needs this because the person saving may not be an administrator, for example during a login or an import. The method returns nothing.",
+      "file": "access_management/models/res_users.py",
+      "selection": {
+        "start": {
+          "line": 16,
+          "character": 5
+        },
+        "end": {
+          "line": 18,
+          "character": 33
+        }
+      }
+    },
+    {
+      "title": "Step one, what is needed",
+      "description": "This builds a Python set of pairs. A set is a collection with no duplicates, written with curly braces. Each pair is a group ID and a profile ID.\n\nRead the comprehension from the bottom. For each active profile of the user, and for each group on the lines of that profile, make a pair. Profile line ids dot group id gives the groups of all lines at once. Odoo collects the field over a whole recordset and removes duplicates.\n\nOnly active profiles count. An archived profile needs nothing, so its groups will be taken back.\n\nThe next line keeps just the group IDs in a second set. The underscore before profile id is a Python habit that says we do not use this part.",
+      "file": "access_management/models/res_users.py",
+      "selection": {
+        "start": {
+          "line": 19,
+          "character": 13
+        },
+        "end": {
+          "line": 24,
+          "character": 75
+        }
+      }
+    },
+    {
+      "title": "Step two, what we remember",
+      "description": "Now we look at the notebook. Existing is the ledger rows for this user. Existing pairs is the same idea as needed, but from the past.\n\nKnown groups are groups the ledger already mentions. Manual groups are the ones where was manual is true. Filtered with a text name keeps only the records where that boolean is true.\n\nHeld is the set of group IDs the user has right now. Group ids is the explicit groups, the ones ticked on the user. It does not include groups that come only by implication.",
+      "file": "access_management/models/res_users.py",
+      "selection": {
+        "start": {
+          "line": 25,
+          "character": 13
+        },
+        "end": {
+          "line": 29,
+          "character": 43
+        }
+      }
+    },
+    {
+      "title": "Step three, the difference",
+      "description": "Set maths does the thinking here. Stale rows are ledger rows that are no longer needed. They are in the notebook but not in needed. Filtered with a lambda keeps them. A lambda is a tiny function written in one line.\n\nGroups to remove is the important line. Take the groups of the stale rows. Subtract the groups still needed by some other profile. Subtract the manual groups. What is left is safe to take away. This is your careful removal rule in one line.\n\nGroups to add is the needed groups minus what the user already holds.\n\nExample. Profile A and profile B both need the Sales group. Remove A. Sales is still in needed because of B, so it is not removed. Remove B too and Sales is removed, unless it was manual.",
+      "file": "access_management/models/res_users.py",
+      "selection": {
+        "start": {
+          "line": 31,
+          "character": 13
+        },
+        "end": {
+          "line": 35,
+          "character": 49
+        }
+      }
+    },
+    {
+      "title": "Step four, new ledger lines",
+      "description": "For every needed pair not yet in the notebook, we prepare one new line. A line is a dictionary with the four fields.\n\nThe was manual value matters. If the notebook already mentions this group, copy that answer, so every line of the same group agrees. If it is the first time, the answer is whether the user already holds the group. If they do, someone gave it by hand, so it is manual.\n\nWe only build the list here. Nothing is saved yet.",
+      "file": "access_management/models/res_users.py",
+      "selection": {
+        "start": {
+          "line": 37,
+          "character": 13
+        },
+        "end": {
+          "line": 48,
+          "character": 19
+        }
+      }
+    },
+    {
+      "title": "Step five, apply the changes",
+      "description": "First we delete the stale ledger rows. Then we create the new ones. Create takes a list of dictionaries and returns the new records.\n\nLast, we change the groups of the user in one write. Command link adds a group and command unlink removes the link without deleting the group itself. These are the Odoo tuple commands, written in a readable way. The two lists are joined with a plus sign into one list.\n\nNote that an empty list is fine. Nothing happens if nothing changed.",
+      "file": "access_management/models/res_users.py",
+      "selection": {
+        "start": {
+          "line": 50,
+          "character": 13
+        },
+        "end": {
+          "line": 55,
+          "character": 14
+        }
+      }
+    },
+    {
+      "title": "Checkpoint: sync logic written",
+      "description": "Done so far. The profiles field and tab, the ledger, and the sync method that works out which groups to add and remove.\n\nNext. Nothing calls the method yet, so nothing happens when you add a user to a profile. Step five adds the triggers. They call the sync when a profile is created or changed, when its lines change, and when profiles are added to or removed from a user."
+    }
+  ]
+}

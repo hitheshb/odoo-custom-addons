@@ -1,0 +1,6 @@
+id,name,model_id,group_id/id,operation,domain
+access_test_access_profile_admin,test.access.profile admin,test.access.profile,base.group_system,crud,
+access_test_access_profile_line_admin,test.access.profile.line admin,test.access.profile.line,base.group_system,crud,
+access_test_access_profile_grant_admin,test.access.profile.grant admin,test.access.profile.grant,base.group_system,crud,
+access_test_access_profile_upload_admin,test.access.profile.upload admin,test.access.profile.upload,base.group_system,crud,
+access_test_access_import_admin,test.access.import admin,test.access.import,base.group_system,crud,

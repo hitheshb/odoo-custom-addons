@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="access_list_view" model="ir.ui.view">
+        <field name="name">user.access.access.list</field>
+        <field name="model">ir.access</field>
+        <field name="arch" type="xml">
+            <list decoration-danger="kind == 'restriction'">
+                <field name="name"/>
+                <field name="model_id"/>
+                <field name="group_id"/>
+                <field name="operation" widget="badge" width="170px"/>
+                <field name="domain" optional="show"/>
+                <field name="kind" widget="badge" width="120px" decoration-success="kind == 'permission'" decoration-danger="kind == 'restriction'"/>
+                <field name="uam_user_count" string="All Users"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="access_form_view" model="ir.ui.view">
+        <field name="name">user.access.access.form</field>
+        <field name="model">ir.access</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <widget name="web_ribbon" title="Standard" bg_color="text-bg-secondary" invisible="not is_standard"/>
+                    <widget name="web_ribbon" title="Restriction" bg_color="text-bg-danger" invisible="is_standard or kind != 'restriction'"/>
+                    <div class="oe_button_box" name="button_box">
+                        <button class="oe_stat_button" type="object" name="action_open_users"
+                                string="Users" invisible="not group_id">
+                            <field name="uam_user_count" widget="statinfo" string="All Users"/>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name" readonly="is_standard" placeholder="Access name"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="model_id" readonly="is_standard"/>
+                            <field name="group_id" readonly="is_standard"
+                                   context="{'form_view_ref': 'user_access_management.group_form_view'}"/>
+                        </group>
+                        <group>
+                            <field name="for_create" widget="boolean_toggle" readonly="is_standard"/>
+                            <field name="for_read" widget="boolean_toggle" readonly="is_standard"/>
+                            <field name="for_write" widget="boolean_toggle" readonly="is_standard"/>
+                            <field name="for_unlink" widget="boolean_toggle" readonly="is_standard"/>
+                            <field name="kind" widget="badge" decoration-success="kind == 'permission'" decoration-danger="kind == 'restriction'"/>
+                            <field name="is_standard" invisible="1"/>
+                        </group>
+                    </group>
+                    <group>
+                        <field name="domain" readonly="is_standard" widget="text"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="access_action" model="ir.actions.act_window">
+        <field name="name">Access Rights</field>
+        <field name="res_model">ir.access</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No access rights match</p>
+            <p>Each access right says which operations a group may do on a model.</p>
+        </field>
+    </record>
+    <record id="access_action_list" model="ir.actions.act_window.view">
+        <field name="sequence" eval="1"/>
+        <field name="view_mode">list</field>
+        <field name="view_id" ref="access_list_view"/>
+        <field name="act_window_id" ref="access_action"/>
+    </record>
+    <record id="access_action_form" model="ir.actions.act_window.view">
+        <field name="sequence" eval="2"/>
+        <field name="view_mode">form</field>
+        <field name="view_id" ref="access_form_view"/>
+        <field name="act_window_id" ref="access_action"/>
+    </record>
+</odoo>

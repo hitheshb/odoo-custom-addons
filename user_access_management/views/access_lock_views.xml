@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="access_lock_view_list" model="ir.ui.view">
+        <field name="name">uam.access.lock.list</field>
+        <field name="model">uam.access.lock</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="user_id" widget="many2one_avatar_user"/>
+                <field name="group_id" optional="show"/>
+                <field name="lock_state" widget="badge" decoration-danger="lock_state == 'active'" decoration-muted="lock_state == 'expired'"/>
+                <field name="model_id"/>
+                <field name="method_ids" widget="many2many_tags"/>
+                <field name="forever"/>
+                <field name="date_until" widget="relative_date" invisible="forever"/>
+                <field name="note" optional="hide"/>
+            </list>
+        </field>
+    </record>
+    <record id="access_lock_view_kanban" model="ir.ui.view">
+        <field name="name">uam.access.lock.kanban</field>
+        <field name="model">uam.access.lock</field>
+        <field name="arch" type="xml">
+            <kanban>
+                <field name="lock_state"/>
+                <templates>
+                    <t t-name="card">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <field name="model_id" class="fw-bold"/>
+                            <field name="lock_state" widget="badge" decoration-danger="lock_state == 'active'" decoration-muted="lock_state == 'expired'"/>
+                        </div>
+                        <field name="method_ids" widget="many2many_tags"/>
+                        <div class="text-muted small mt-1" t-if="record.lock_state.raw_value == 'active'">Until <field name="date_until"/></div>
+                        <div class="text-muted small"><field name="user_id" widget="many2one_avatar_user"/><field name="group_id"/></div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+    <record id="access_lock_view_form" model="ir.ui.view">
+        <field name="name">uam.access.lock.form</field>
+        <field name="model">uam.access.lock</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_unlock" type="object" string="Unlock now" class="btn-primary" invisible="lock_state == 'expired'"/>
+                    <button name="action_extend_day" type="object" string="Extend 1 day" invisible="forever"/>
+                    <button name="action_extend_week" type="object" string="Extend 1 week" invisible="forever"/>
+                </header>
+                <sheet>
+                    <widget name="web_ribbon" title="Forever" bg_color="text-bg-dark" invisible="lock_state != 'forever'"/>
+                    <widget name="web_ribbon" title="Expired" bg_color="text-bg-secondary" invisible="lock_state != 'expired'"/>
+                    <field name="active" invisible="1"/>
+                    <field name="lock_state" invisible="1"/>
+                    <group>
+                        <group>
+                            <field name="user_id" invisible="group_id" required="not group_id"/>
+                            <field name="group_id" invisible="user_id" required="not user_id"/>
+                            <field name="model_id" options="{'no_create': True}"/>
+                        </group>
+                        <group>
+                            <field name="forever"/>
+                            <field name="date_until" invisible="forever" required="not forever"/>
+                            <field name="note"/>
+                        </group>
+                    </group>
+                    <separator string="Methods to block" invisible="not model_id"/>
+                    <field name="method_ids" widget="many2many_checkboxes" invisible="not model_id"/>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="access_lock_view_search" model="ir.ui.view">
+        <field name="name">uam.access.lock.search</field>
+        <field name="model">uam.access.lock</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="user_id"/>
+                <field name="group_id"/>
+                <field name="model_id"/>
+                <filter name="by_user" string="User" context="{'group_by': 'user_id'}"/>
+                <filter name="by_group" string="Group" context="{'group_by': 'group_id'}"/>
+                <filter name="archived" string="Archived" domain="[('active', '=', False)]"/>
+            </search>
+        </field>
+    </record>
+    <record id="access_lock_action" model="ir.actions.act_window">
+        <field name="name">Access Lock</field>
+        <field name="res_model">uam.access.lock</field>
+        <field name="view_mode">kanban,list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No locks yet</p>
+            <p>Block a user or a whole group from creating, editing, deleting, printing or pressing a button on a model, until a date or forever.</p>
+        </field>
+    </record>
+</odoo>
